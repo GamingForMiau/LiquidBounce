@@ -31,7 +31,7 @@ class Velocity : Module() {
     private val horizontalValue = FloatValue("Horizontal", 0F, 0F, 1F)
     private val verticalValue = FloatValue("Vertical", 0F, 0F, 1F)
     private val modeValue = ListValue("Mode", arrayOf("Simple", "AAC", "AACPush", "AACZero",
-            "Reverse", "SmoothReverse", "Jump", "Glitch"), "Simple")
+            "Reverse", "SmoothReverse", "Jump", "Glitch", "Tesla"), "Simple")
 
     // Reverse
     private val reverseStrengthValue = FloatValue("ReverseStrength", 1F, 0.1F, 1F)
@@ -117,7 +117,7 @@ class Velocity : Module() {
             "aac" -> if (velocityInput && velocityTimer.hasTimePassed(80L)) {
                 thePlayer.motionX *= horizontalValue.get()
                 thePlayer.motionZ *= horizontalValue.get()
-                //mc.thePlayer.motionY *= verticalValue.get() ?
+                thePlayer.motionY *= verticalValue.get()
                 velocityInput = false
             }
 
@@ -144,6 +144,8 @@ class Velocity : Module() {
                     thePlayer.motionZ /= reduce
                 }
             }
+
+            "tesla" -> {}
 
             "aaczero" -> if (thePlayer.hurtTime > 0) {
                 if (!velocityInput || thePlayer.onGround || thePlayer.fallDistance > 2F)
@@ -197,8 +199,7 @@ class Velocity : Module() {
             }
         }
 
-        if (classProvider.isSPacketExplosion(packet)) {
-            // TODO: Support velocity for explosions
+        if (classProvider.isSPacketExplosion(packet) && modeValue.get().equals("Tesla", ignoreCase = true)) {
             event.cancelEvent()
         }
     }

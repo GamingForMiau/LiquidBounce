@@ -82,12 +82,6 @@ class KillAura : Module() {
     private val swingValue = BoolValue("Swing", true)
     private val keepSprintValue = BoolValue("KeepSprint", true)
 
-    // AutoBlock
-    private val autoBlockValue = BoolValue("AutoBlock", false)
-    private val interactAutoBlockValue = BoolValue("InteractAutoBlock", true)
-    private val delayedBlockValue = BoolValue("DelayedBlock", true)
-    private val blockRate = IntegerValue("BlockRate", 100, 1, 100)
-
     // Raycast
     private val raycastValue = BoolValue("RayCast", true)
     private val raycastIgnoredValue = BoolValue("RayCastIgnored", false)
@@ -187,7 +181,6 @@ class KillAura : Module() {
         attackTimer.reset()
         clicks = 0
 
-        stopBlocking()
     }
 
     /**
@@ -202,11 +195,6 @@ class KillAura : Module() {
             // Update hitable
             updateHitable()
 
-            // AutoBlock
-            if (autoBlockValue.get() && delayedBlockValue.get() && canBlock)
-                startBlocking(currentTarget!!, hitable)
-
-            return
         }
 
         if (rotationStrafeValue.get().equals("Off", true))
@@ -272,7 +260,7 @@ class KillAura : Module() {
         updateTarget()
 
         if (target == null) {
-            stopBlocking()
+
             return
         }
 
@@ -292,7 +280,6 @@ class KillAura : Module() {
             target = null
             currentTarget = null
             hitable = false
-            stopBlocking()
             return
         }
 
@@ -322,7 +309,6 @@ class KillAura : Module() {
             target = null
             currentTarget = null
             hitable = false
-            stopBlocking()
             return
         }
 
@@ -552,17 +538,6 @@ class KillAura : Module() {
                 thePlayer.onEnchantmentCritical(target!!)
         }
 
-        // Start blocking after attack
-        if (thePlayer.isBlocking || (autoBlockValue.get() && canBlock)) {
-            if (!(blockRate.get() > 0 && Random().nextInt(100) <= blockRate.get()))
-                return
-
-            if (delayedBlockValue.get())
-                return
-
-            startBlocking(entity, interactAutoBlockValue.get())
-        }
-
         @Suppress("ConstantConditionIf")
         if (Backend.MINECRAFT_VERSION_MINOR != 8) {
             thePlayer.resetCooldown()
@@ -634,30 +609,6 @@ class KillAura : Module() {
             hitable = if (maxTurnSpeed.get() > 0F) currentTarget == raycastedEntity else true
         } else
             hitable = RotationUtils.isFaced(currentTarget, reach)
-    }
-
-    /**
-     * Start blocking
-     */
-    private fun startBlocking(interactEntity: IEntity, interact: Boolean) {
-        if (interact) {
-            mc.netHandler.addToSendQueue(classProvider.createCPacketUseEntity(interactEntity, interactEntity.positionVector))
-            mc.netHandler.addToSendQueue(classProvider.createCPacketUseEntity(interactEntity, ICPacketUseEntity.WAction.INTERACT))
-        }
-
-        mc.netHandler.addToSendQueue(createUseItemPacket(mc.thePlayer!!.inventory.getCurrentItemInHand(), WEnumHand.MAIN_HAND))
-        blockingStatus = true
-    }
-
-
-    /**
-     * Stop blocking
-     */
-    private fun stopBlocking() {
-        if (blockingStatus) {
-            mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerDigging(ICPacketPlayerDigging.WAction.RELEASE_USE_ITEM, WBlockPos.ORIGIN, classProvider.getEnumFacing(EnumFacingType.DOWN)))
-            blockingStatus = false
-        }
     }
 
     /**

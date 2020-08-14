@@ -82,8 +82,7 @@ class InventoryCleaner : Module() {
         if (!InventoryUtils.CLICK_TIMER.hasTimePassed(delay) ||
                 !classProvider.isGuiInventory(mc.currentScreen) && invOpenValue.get() ||
                 noMoveValue.get() && MovementUtils.isMoving ||
-                thePlayer.openContainer != null && thePlayer.openContainer!!.windowId != 0
-                || (LiquidBounce.moduleManager[AutoArmor::class.java] as AutoArmor).isLocked)
+                thePlayer.openContainer != null && thePlayer.openContainer!!.windowId != 0)
             return
 
         if (sortValue.get())

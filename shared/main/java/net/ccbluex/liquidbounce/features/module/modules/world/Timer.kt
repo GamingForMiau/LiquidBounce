@@ -14,6 +14,7 @@ import net.ccbluex.liquidbounce.features.module.ModuleInfo
 import net.ccbluex.liquidbounce.utils.MovementUtils
 import net.ccbluex.liquidbounce.value.BoolValue
 import net.ccbluex.liquidbounce.value.FloatValue
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
 
 @ModuleInfo(name = "Timer", description = "Changes the speed of the entire game.", category = ModuleCategory.WORLD)
 class Timer : Module() {
@@ -28,7 +29,7 @@ class Timer : Module() {
         mc.timer.timerSpeed = 1F
     }
 
-    @EventTarget
+    @SubscribeEvent
     fun onUpdate(event: UpdateEvent) {
         if(MovementUtils.isMoving || !onMoveValue.get()) {
             mc.timer.timerSpeed = speedValue.get()
@@ -38,7 +39,7 @@ class Timer : Module() {
         mc.timer.timerSpeed = 1F
     }
 
-    @EventTarget
+    @SubscribeEvent
     fun onWorld(event: WorldEvent) {
         if (event.worldClient != null)
             return

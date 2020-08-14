@@ -9,6 +9,7 @@ import net.ccbluex.liquidbounce.LiquidBounce;
 import net.ccbluex.liquidbounce.api.enums.BlockType;
 import net.ccbluex.liquidbounce.api.enums.EnumFacingType;
 import net.ccbluex.liquidbounce.api.minecraft.client.block.IBlock;
+import net.ccbluex.liquidbounce.api.minecraft.inventory.ISlot;
 import net.ccbluex.liquidbounce.api.minecraft.item.IItemStack;
 import net.ccbluex.liquidbounce.api.minecraft.network.IPacket;
 import net.ccbluex.liquidbounce.api.minecraft.network.play.client.ICPacketEntityAction;
@@ -30,12 +31,13 @@ import net.ccbluex.liquidbounce.value.BoolValue;
 import net.ccbluex.liquidbounce.value.FloatValue;
 import net.ccbluex.liquidbounce.value.IntegerValue;
 import net.ccbluex.liquidbounce.value.ListValue;
-import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
+import net.ccbluex.liquidbounce.utils.Rotation;
+import net.ccbluex.liquidbounce.features.module.modules.world.ScaffoldAddon;
 
 import java.awt.*;
 
-@ModuleInfo(name = "Scaffold", description = "Automatically places blocks beneath your feet.", category = ModuleCategory.WORLD, keyBind = Keyboard.KEY_I)
+@ModuleInfo(name = "Scaffold", description = "Automatically places blocks beneath your feet.", category = ModuleCategory.WORLD)
 public class Scaffold extends Module {
 
     /**
@@ -43,25 +45,25 @@ public class Scaffold extends Module {
      */
 
     // Mode
-    public final ListValue modeValue = new ListValue("Mode", new String[] {"Normal", "Rewinside", "Expand"}, "Normal");
+    public final ListValue modeValue = new ListValue("Mode", new String[]{"Normal", "Rewinside", "Expand"}, "Normal");
 
     // Delay
-    private final IntegerValue maxDelayValue = new IntegerValue("MaxDelay", 0, 0, 1000) {
+    private final IntegerValue maxDelayValue = new IntegerValue("MaxPlaceableDelay", 0, 0, 1000) {
         @Override
         protected void onChanged(final Integer oldValue, final Integer newValue) {
             final int i = minDelayValue.get();
 
-            if(i > newValue)
+            if (i > newValue)
                 set(i);
         }
     };
 
-    private final IntegerValue minDelayValue = new IntegerValue("MinDelay", 0, 0, 1000) {
+    private final IntegerValue minDelayValue = new IntegerValue("MinPlaceableDelay", 0, 0, 1000) {
         @Override
         protected void onChanged(final Integer oldValue, final Integer newValue) {
             final int i = maxDelayValue.get();
 
-            if(i < newValue)
+            if (i < newValue)
                 set(i);
         }
     };
@@ -71,40 +73,112 @@ public class Scaffold extends Module {
     private final BoolValue autoBlockValue = new BoolValue("AutoBlock", true);
     private final BoolValue stayAutoBlock = new BoolValue("StayAutoBlock", false);
 
+    // AutoBlockSet
+    public final BoolValue autoBlockSetValue = new BoolValue("AutoBlockSet", false) {
+        @Override
+        protected void onChanged(final Boolean oldValue, final Boolean newValue) {
+            if (newValue)
+                autoBlockValue.set(false);
+                stayAutoBlock.set(false);
+        }
+    };
+
     // Basic stuff
-    public final BoolValue sprintValue = new BoolValue("Sprint", true);
+    public final BoolValue sprintValue = new BoolValue("Sprint", false);
     private final BoolValue swingValue = new BoolValue("Swing", true);
     private final BoolValue searchValue = new BoolValue("Search", true);
-    private final BoolValue downValue = new BoolValue("Down", true);
+    private final BoolValue downValue = new BoolValue("Downwards", false);
     private final ListValue placeModeValue = new ListValue("PlaceTiming", new String[]{"Pre", "Post"}, "Post");
 
     // Eagle
-    private final BoolValue eagleValue = new BoolValue("Eagle", false);
-    private final BoolValue eagleSilentValue = new BoolValue("EagleSilent", false);
+    private final ListValue eagleValue = new ListValue("Eagle", new String[]{"Normal", "EdgeDistance", "Silent", "Off"}, "Off");
     private final IntegerValue blocksToEagleValue = new IntegerValue("BlocksToEagle", 0, 0, 10);
+    private final FloatValue edgeDistanceValue = new FloatValue("EagleEdgeDistance", 0.2F, 0F, 0.5F);
 
     // Expand
     private final IntegerValue expandLengthValue = new IntegerValue("ExpandLength", 5, 1, 6);
 
     // Rotations
-    private final BoolValue rotationsValue = new BoolValue("Rotations", true);
-    private final IntegerValue keepLengthValue = new IntegerValue("KeepRotationLength", 0, 0, 20);
+    public final BoolValue clientSideRotationsValue = new BoolValue("SilentRotation", false);
+    public final ListValue rotationModeValue = new ListValue("RotationMode", new String[]{"Normal", "Silent", "StaticPitch", "StaticYaw", "Off"}, "Normal");
     private final BoolValue keepRotationValue = new BoolValue("KeepRotation", false);
+    private final IntegerValue keepLengthValue = new IntegerValue("KeepRotationLength", 0, 0, 20);
+    private final FloatValue staticPitchValue = new FloatValue("StaticPitchOffset", 86F, 70F, 90F);
+    private final FloatValue staticYawOffsetValue = new FloatValue("StaticYawOffset", 0F, 0F, 90F);
+
+    // RotationStrafe
+    public final BoolValue rotationStrafeValue = new BoolValue("RotationStrafe", false) {
+        @Override
+        protected void onChanged(final Boolean oldValue, final Boolean newValue) {
+            if (newValue)
+                keepRotationValue.set(true);
+        }
+    };
+
+    // Other
+    private final FloatValue xzRangeValue = new FloatValue("xzRange", 0.8F, 0.1F, 1.0F);
+    private final FloatValue yRangeValue = new FloatValue("yRange", 0.8F, 0.1F, 1.0F);
+
+    // SearchAccuracy
+    private final IntegerValue searchAccuracyValue = new IntegerValue("SearchAccuracy", 8, 1, 24) {
+        @Override
+        protected void onChanged(final Integer oldValue, final Integer newValue) {
+            if (getMaximum() < newValue) {
+                set(getMaximum());
+            } else if (getMinimum() > newValue) {
+                set(getMinimum());
+            }
+        }
+    };
+
+    // Turn Speed
+    private final FloatValue maxTurnSpeedValue = new FloatValue("MaxTurnSpeed", 180, 1, 180) {
+        @Override
+        protected void onChanged(final Float oldValue, final Float newValue) {
+            float v = minTurnSpeedValue.get();
+            if (v > newValue) set(v);
+            if (getMaximum() < newValue) {
+                set(getMaximum());
+            } else if (getMinimum() > newValue) {
+                set(getMinimum());
+            }
+        }
+    };
+    private final FloatValue minTurnSpeedValue = new FloatValue("MinTurnSpeed", 180, 1, 180) {
+        @Override
+        protected void onChanged(final Float oldValue, final Float newValue) {
+            float v = maxTurnSpeedValue.get();
+            if (v < newValue) set(v);
+            if (getMaximum() < newValue) {
+                set(getMaximum());
+            } else if (getMinimum() > newValue) {
+                set(getMinimum());
+            }
+        }
+    };
 
     // Zitter
     private final BoolValue zitterValue = new BoolValue("Zitter", false);
-    private final ListValue zitterModeValue = new ListValue("ZitterMode", new String[] {"Teleport", "Smooth"}, "Teleport");
+    private final ListValue zitterModeValue = new ListValue("ZitterMode", new String[]{"Teleport", "Smooth"}, "Teleport");
     private final FloatValue zitterSpeed = new FloatValue("ZitterSpeed", 0.13F, 0.1F, 0.3F);
     private final FloatValue zitterStrength = new FloatValue("ZitterStrength", 0.072F, 0.05F, 0.2F);
 
     // Game
     private final FloatValue timerValue = new FloatValue("Timer", 1F, 0.1F, 10F);
     private final FloatValue speedModifierValue = new FloatValue("SpeedModifier", 1F, 0, 2F);
+    private final BoolValue  slowValue = new BoolValue("Slow", false) {
+        @Override
+        protected void onChanged(final Boolean oldValue, final Boolean newValue) {
+            if (newValue)
+                sprintValue.set(false);
+        }
+    };
+    private final FloatValue slowSpeed = new FloatValue("SlowSpeed", 0.6F, 0.2F, 0.8F);
 
     // Safety
-    private final BoolValue sameYValue = new BoolValue("SameY", false);
     private final BoolValue safeWalkValue = new BoolValue("SafeWalk", true);
     private final BoolValue airSafeValue = new BoolValue("AirSafe", false);
+    private final BoolValue sameYValue = new BoolValue("SameY", false);
 
     // Visuals
     private final BoolValue counterDisplayValue = new BoolValue("Counter", true);
@@ -117,15 +191,20 @@ public class Scaffold extends Module {
     // Target block
     private PlaceInfo targetPlace;
 
-
     // Launch position
     private int launchY;
 
-    // Rotation lock
+    // Rotation + lock
     private Rotation lockRotation;
+    private Rotation limitedRotation;
+    private boolean facesBlock = false;
 
     // Auto block slot
     private int slot;
+
+    private int blockSlot = -1;
+
+    private ISlot slot1 = null;
 
     // Zitter Smooth
     private boolean zitterDirection;
@@ -139,34 +218,80 @@ public class Scaffold extends Module {
     private int placedBlocksWithoutEagle = 0;
     private boolean eagleSneaking;
 
-    // Down
+    // Downwards
     private boolean shouldGoDown = false;
 
+    // Sprint
+    private boolean shouldSprint = false;
+
     /**
-     * Enable module
+     * @So, here is subscribe events :)
      */
     @Override
     public void onEnable() {
+        final String mode = modeValue.get();
+
         if (mc.getThePlayer() == null) return;
 
         launchY = (int) mc.getThePlayer().getPosY();
+
+        super.onEnable();
     }
 
     /**
-     * Update event
-     *
-     * @param event
+     * @First subscribe event :)
      */
     @EventTarget
     public void onUpdate(final UpdateEvent event) {
+        if(autoBlockSetValue.get()) {
+
+            blockSlot = InventoryUtils.findAutoBlockBlock();
+
+            if (slot1 == null) {
+                slot = mc.getThePlayer().getInventory().getCurrentItem();
+            }
+
+            if (blockSlot != -1) {
+                mc.getThePlayer().getInventory().setCurrentItem(blockSlot - 36);
+            } else {
+                if (slot1 != null) {
+                    mc.getThePlayer().getInventory().setCurrentItem(slot);
+                    slot1 = null;
+                }
+            }
+        }
+
+        final String mode = modeValue.get();
+
         mc.getTimer().setTimerSpeed(timerValue.get());
+
 
         shouldGoDown = downValue.get() && mc.getGameSettings().isKeyDown(mc.getGameSettings().getKeyBindSneak()) && getBlocksAmount() > 1;
         if (shouldGoDown)
             mc.getGameSettings().getKeyBindSneak().setPressed(false);
 
+        if(slowValue.get()) {
+            mc.getThePlayer().setMotionX(mc.getThePlayer().getMotionX() * slowSpeed.get());
+            mc.getThePlayer().setMotionZ(mc.getThePlayer().getMotionZ() * slowSpeed.get());
+        }
+
+        shouldSprint = sprintValue.get() && mc.getGameSettings().isKeyDown(mc.getGameSettings().getKeyBindSprint());
+        if(sprintValue.get()) {
+            if (!mc.getGameSettings().isKeyDown(mc.getGameSettings().getKeyBindSprint())) {
+                mc.getGameSettings().getKeyBindSprint().setPressed(false);
+            }
+            if (mc.getGameSettings().isKeyDown(mc.getGameSettings().getKeyBindSprint())) {
+                mc.getGameSettings().getKeyBindSprint().setPressed(true);
+            }
+            if (mc.getGameSettings().getKeyBindSprint().isKeyDown()) {
+                mc.getThePlayer().setSprinting(true);
+            }
+            if (!mc.getGameSettings().getKeyBindSprint().isKeyDown()) {
+                mc.getThePlayer().setSprinting(false);
+            }
+        }
+
         if (mc.getThePlayer().getOnGround()) {
-            final String mode = modeValue.get();
 
             // Rewinside scaffold mode
             if (mode.equalsIgnoreCase("Rewinside")) {
@@ -197,12 +322,88 @@ public class Scaffold extends Module {
             }
 
             // Eagle
-            if (eagleValue.get() && !shouldGoDown) {
+            if (!eagleValue.get().equalsIgnoreCase("Off") && !shouldGoDown) {
+                double dif = 0.5D;
+                if (eagleValue.get().equalsIgnoreCase("EdgeDistance") && !shouldGoDown) {
+                    for (int i = 0; i < 4; i++) {
+                        switch (i) {
+                            case 0: {
+                                final WBlockPos blockPos = new WBlockPos(mc.getThePlayer().getPosX() - 1, mc.getThePlayer().getPosY() - (mc.getThePlayer().getPosY() == (int) mc.getThePlayer().getPosY() + 0.5D ? 0D : 1.0D), mc.getThePlayer().getPosZ());
+                                final PlaceInfo placeInfo = PlaceInfo.get(blockPos);
+
+                                if (BlockUtils.isReplaceable(blockPos) && placeInfo != null) {
+                                    double calcDif = mc.getThePlayer().getPosX() - blockPos.getX();
+                                    calcDif -= 0.5D;
+
+                                    if (calcDif < 0)
+                                        calcDif *= -1;
+                                    calcDif -= 0.5;
+
+                                    if (calcDif < dif)
+                                        dif = calcDif;
+                                }
+
+                            }
+                            case 1: {
+                                final WBlockPos blockPos = new WBlockPos(mc.getThePlayer().getPosX() + 1, mc.getThePlayer().getPosY() - (mc.getThePlayer().getPosY() == (int) mc.getThePlayer().getPosY() + 0.5D ? 0D : 1.0D), mc.getThePlayer().getPosZ());
+                                final PlaceInfo placeInfo = PlaceInfo.get(blockPos);
+
+                                if (BlockUtils.isReplaceable(blockPos) && placeInfo != null) {
+                                    double calcDif = mc.getThePlayer().getPosX() - blockPos.getX();
+                                    calcDif -= 0.5D;
+
+                                    if (calcDif < 0)
+                                        calcDif *= -1;
+                                    calcDif -= 0.5;
+
+                                    if (calcDif < dif)
+                                        dif = calcDif;
+                                }
+
+                            }
+                            case 2: {
+                                final WBlockPos blockPos = new WBlockPos(mc.getThePlayer().getPosX(), mc.getThePlayer().getPosY() - (mc.getThePlayer().getPosY() == (int) mc.getThePlayer().getPosY() + 0.5D ? 0D : 1.0D), mc.getThePlayer().getPosZ() - 1);
+                                final PlaceInfo placeInfo = PlaceInfo.get(blockPos);
+
+                                if (BlockUtils.isReplaceable(blockPos) && placeInfo != null) {
+                                    double calcDif = mc.getThePlayer().getPosZ() - blockPos.getZ();
+                                    calcDif -= 0.5D;
+
+                                    if (calcDif < 0)
+                                        calcDif *= -1;
+                                    calcDif -= 0.5;
+
+                                    if (calcDif < dif)
+                                        dif = calcDif;
+                                }
+
+                            }
+                            case 3: {
+                                final WBlockPos blockPos = new WBlockPos(mc.getThePlayer().getPosX(), mc.getThePlayer().getPosY() - (mc.getThePlayer().getPosY() == (int) mc.getThePlayer().getPosY() + 0.5D ? 0D : 1.0D), mc.getThePlayer().getPosZ() + 1);
+                                final PlaceInfo placeInfo = PlaceInfo.get(blockPos);
+
+                                if (BlockUtils.isReplaceable(blockPos) && placeInfo != null) {
+                                    double calcDif = mc.getThePlayer().getPosZ() - blockPos.getZ();
+                                    calcDif -= 0.5D;
+
+                                    if (calcDif < 0)
+                                        calcDif *= -1;
+                                    calcDif -= 0.5;
+
+                                    if (calcDif < dif)
+                                        dif = calcDif;
+                                }
+
+                            }
+                        }
+                    }
+                }
+
                 if (placedBlocksWithoutEagle >= blocksToEagleValue.get()) {
                     final boolean shouldEagle = mc.getTheWorld().getBlockState(new WBlockPos(mc.getThePlayer().getPosX(),
-                            mc.getThePlayer().getPosY() - 1D, mc.getThePlayer().getPosZ())).getBlock().equals(classProvider.getBlockEnum(BlockType.AIR));
+                            mc.getThePlayer().getPosY() - 1D, mc.getThePlayer().getPosZ())).getBlock().equals(classProvider.getBlockEnum(BlockType.AIR)) || (dif < edgeDistanceValue.get() && eagleValue.get().equalsIgnoreCase("EdgeDistance"));
 
-                    if (eagleSilentValue.get()) {
+                    if (eagleValue.get().equalsIgnoreCase("Silent") && !shouldGoDown) {
                         if (eagleSneaking != shouldEagle) {
                             mc.getNetHandler().addToSendQueue(
                                     classProvider.createCPacketEntityAction(mc.getThePlayer(), shouldEagle ?
@@ -224,15 +425,18 @@ public class Scaffold extends Module {
             if (zitterValue.get() && zitterModeValue.get().equalsIgnoreCase("teleport")) {
                 MovementUtils.strafe(zitterSpeed.get());
 
+
                 final double yaw = Math.toRadians(mc.getThePlayer().getRotationYaw() + (zitterDirection ? 90D : -90D));
                 mc.getThePlayer().setMotionX(mc.getThePlayer().getMotionX() - Math.sin(yaw) * zitterStrength.get());
                 mc.getThePlayer().setMotionZ(mc.getThePlayer().getMotionZ() + Math.cos(yaw) * zitterStrength.get());
-
                 zitterDirection = !zitterDirection;
             }
         }
     }
 
+    /**
+     * @What are you doing, dude?
+     */
     @EventTarget
     public void onPacket(final PacketEvent event) {
         if (mc.getThePlayer() == null)
@@ -248,16 +452,143 @@ public class Scaffold extends Module {
         }
     }
 
+    /**
+     * @Stop reading the whole code!
+     */
+    @EventTarget
+    private void onStrafe(StrafeEvent event) {
+
+        if (!rotationStrafeValue.get())
+            return;
+
+        if (lockRotation != null && keepRotationValue.get()) {
+            final int dif = (int) ((WMathHelper.wrapAngleTo180_float(mc.getThePlayer().getRotationYaw() - (minTurnSpeedValue.get() < 180 ? limitedRotation : lockRotation).getYaw()
+                    - 23.5F - 135)
+                    + 180) / 45);
+
+            final float yaw = (minTurnSpeedValue.get() < 180 ? limitedRotation : lockRotation).getYaw();
+            final float strafe = event.getStrafe();
+            final float forward = event.getForward();
+            final float friction = event.getFriction();
+            float calcForward = 0F;
+            float calcStrafe = 0F;
+            /*
+            Rotation Dif
+
+            7 \ 0 / 1     +  +  +      +  |  -
+            6   +   2     -- F --      +  S  -
+            5 / 4 \ 3     -  -  -      +  |  -
+            */
+            switch (dif) {
+                case 0: {
+                    calcForward = forward;
+                    calcStrafe = strafe;
+                    break;
+                }
+                case 1: {
+                    calcForward += forward;
+                    calcStrafe -= forward;
+                    calcForward += strafe;
+                    calcStrafe += strafe;
+                    break;
+                }
+                case 2: {
+                    calcForward = strafe;
+                    calcStrafe = -forward;
+                    break;
+                }
+                case 3: {
+                    calcForward -= forward;
+                    calcStrafe -= forward;
+                    calcForward += strafe;
+                    calcStrafe -= strafe;
+                    break;
+                }
+                case 4: {
+                    calcForward = -forward;
+                    calcStrafe = -strafe;
+                    break;
+                }
+                case 5: {
+                    calcForward -= forward;
+                    calcStrafe += forward;
+                    calcForward -= strafe;
+                    calcStrafe -= strafe;
+                    break;
+                }
+                case 6: {
+                    calcForward = -strafe;
+                    calcStrafe = forward;
+                    break;
+                }
+                case 7: {
+                    calcForward += forward;
+                    calcStrafe += forward;
+                    calcForward -= strafe;
+                    calcStrafe += strafe;
+                    break;
+                }
+            }
+
+            if (calcForward > 1F) {
+                calcForward *= ScaffoldAddon.calcForward1Value.get();
+            } else if (calcForward < 0.9F && calcForward > 0.3F) {
+                calcForward *= ScaffoldAddon.calcForward2Value.get();
+            }
+            if (calcForward < -1F) {
+                calcForward *= ScaffoldAddon.calcForward3Value.get();
+            } else if (calcForward > -0.9F && calcForward < -0.3F) {
+                calcForward *= ScaffoldAddon.calcForward4Value.get();
+            }
+
+            if (calcStrafe > 1F) {
+                calcStrafe *= ScaffoldAddon.calcStrafe1Value.get();
+            } else if (calcStrafe < 0.9F && calcStrafe > 0.3F) {
+                calcStrafe *= ScaffoldAddon.calcStrafe2Value.get();
+            }
+            if (calcStrafe < -1F) {
+                calcStrafe *= ScaffoldAddon.calcStrafe3Value.get();
+            } else if (calcStrafe > -0.9F && calcStrafe < -0.3F) {
+                calcStrafe *= ScaffoldAddon.calcStrafe4Value.get();
+            }
+
+            float f = calcStrafe * calcStrafe + calcForward * calcForward;
+
+            if (f >= 1.0E-4F) {
+                f = (float)Math.sqrt((double)f);
+
+                if (f < 1.0F)
+                    f = 1.0F;
+
+                f = friction / f;
+                calcStrafe *= f;
+                calcForward *= f;
+
+                float yawCos = (float)((double)yaw * 3.141592653589793D / (double)180.0F);
+                float yawSin = (float)Math.sin((double)yawCos);
+                float var15 = (float)((double)yaw * 3.141592653589793D / (double)180.0F);
+                yawCos = (float)Math.cos((double)var15);
+
+                mc.getThePlayer().setMotionX(mc.getThePlayer().getMotionX() + calcStrafe * yawCos - calcForward * yawSin);
+                mc.getThePlayer().setMotionZ(mc.getThePlayer().getMotionZ() + calcForward * yawCos + calcStrafe * yawSin);
+            }
+            event.cancelEvent();
+        }
+    }
+
+    /**
+     * @Why are you not stopping?! DUDE, STOP!
+     */
     @EventTarget
     public void onMotion(final MotionEvent event) {
+        // Lock Rotation
+        if (!rotationModeValue.get().equalsIgnoreCase("Off") && keepRotationValue.get() && lockRotation != null)
+            setRotation(lockRotation);
+
+        final String mode = modeValue.get();
         final EventState eventState = event.getEventState();
 
-        // Lock Rotation
-        if (rotationsValue.get() && keepRotationValue.get() && lockRotation != null)
-            RotationUtils.setTargetRotation(lockRotation);
-
-        // Place block
-        if (placeModeValue.get().equalsIgnoreCase(eventState.getStateName()))
+        if ((facesBlock || rotationModeValue.get().equalsIgnoreCase("Off")) && placeModeValue.get().equalsIgnoreCase(eventState.getStateName()))
             place();
 
         // Update and search for new block
@@ -275,6 +606,19 @@ public class Scaffold extends Module {
             return;
 
         findBlock(modeValue.get().equalsIgnoreCase("expand"));
+    }
+
+    private void setRotation(Rotation r, int keepR) {
+        if (!clientSideRotationsValue.get()) {
+            mc.getThePlayer().setRotationYaw(r.getYaw());
+            mc.getThePlayer().setRotationPitch(r.getPitch());
+        } else {
+            RotationUtils.setTargetRotation(r, keepR);
+        }
+    }
+
+    private void setRotation(Rotation r) {
+        setRotation(r, 0);
     }
 
     /**
@@ -309,7 +653,7 @@ public class Scaffold extends Module {
     }
 
     /**
-     * Place target block
+     * @PLEASE STOP, DUDE! Or just subscribe.
      */
     private void place() {
         if (targetPlace == null) {
@@ -334,7 +678,7 @@ public class Scaffold extends Module {
                 return;
 
             mc.getNetHandler().addToSendQueue(classProvider.createCPacketHeldItemChange(blockSlot - 36));
-            itemStack = mc.getThePlayer().getInventory().getStackInSlot(blockSlot);
+            itemStack = mc.getThePlayer().getInventoryContainer().getSlot(blockSlot).getStack();
         }
 
 
@@ -355,7 +699,7 @@ public class Scaffold extends Module {
                 mc.getNetHandler().addToSendQueue(classProvider.createCPacketAnimation());
         }
 
-        if (!stayAutoBlock.get() && blockSlot >= 0)
+        if (stayAutoBlock.get() && blockSlot >= 0)
             mc.getNetHandler().addToSendQueue(classProvider.createCPacketHeldItemChange(mc.getThePlayer().getInventory().getCurrentItem()));
 
         // Reset
@@ -363,7 +707,13 @@ public class Scaffold extends Module {
     }
 
     /**
-     * Disable scaffold module
+     * @You
+     * @just
+     * @need
+     * @to
+     * @subscribe...
+     * @No
+     * @more.
      */
     @Override
     public void onDisable() {
@@ -383,17 +733,18 @@ public class Scaffold extends Module {
             mc.getGameSettings().getKeyBindLeft().setPressed(false);
 
         lockRotation = null;
+        limitedRotation = null;
+        facesBlock = false;
         mc.getTimer().setTimerSpeed(1F);
         shouldGoDown = false;
 
         if (slot != mc.getThePlayer().getInventory().getCurrentItem())
             mc.getNetHandler().addToSendQueue(classProvider.createCPacketHeldItemChange(mc.getThePlayer().getInventory().getCurrentItem()));
+        super.onDisable();
     }
 
     /**
-     * Entity movement event
-     *
-     * @param event
+     * @Its really important for me! Just subscribe.
      */
     @EventTarget
     public void onMove(final MoveEvent event) {
@@ -405,9 +756,7 @@ public class Scaffold extends Module {
     }
 
     /**
-     * Scaffold visuals
-     *
-     * @param event
+     * @Ok. This is just scaffold visuals, but did you subscribe?
      */
     @EventTarget
     public void onRender2D(final Render2DEvent event) {
@@ -436,9 +785,7 @@ public class Scaffold extends Module {
     }
 
     /**
-     * Scaffold visuals
-     *
-     * @param event
+     * @Another scaffold visuals. Did you leave a comment?
      */
     @EventTarget
     public void onRender3D(final Render3DEvent event) {
@@ -457,15 +804,28 @@ public class Scaffold extends Module {
     }
 
     /**
-     * Search for placeable block
-     *
-     * @param blockPosition pos
-     * @param checks        visible
-     * @return
+     * @Thank you.
      */
     private boolean search(final WBlockPos blockPosition, final boolean checks) {
         if (!BlockUtils.isReplaceable(blockPosition))
             return false;
+        // StaticModes
+        final boolean staticMode = rotationModeValue.get().equalsIgnoreCase("Silent");
+        final boolean staticPitchMode = staticMode || rotationModeValue.get().equalsIgnoreCase("StaticPitch");
+        final boolean staticYawMode = staticMode || rotationModeValue.get().equalsIgnoreCase("StaticYaw");
+        final float staticPitch = staticPitchValue.get();
+        final float staticYawOffset = staticYawOffsetValue.get();
+
+        // SearchRanges
+        final double xzRV = xzRangeValue.get();
+        final double xzSSV = calcStepSize(xzRV);
+        final double yRV = yRangeValue.get();
+        final double ySSV = calcStepSize(yRV);
+
+        double xSearchFace = 0;
+        double ySearchFace = 0;
+        double zSearchFace = 0;
+
 
         final WVec3 eyesPos = new WVec3(mc.getThePlayer().getPosX(), mc.getThePlayer().getEntityBoundingBox().getMinY() + mc.getThePlayer().getEyeHeight(), mc.getThePlayer().getPosZ());
 
@@ -480,9 +840,9 @@ public class Scaffold extends Module {
 
             final WVec3 dirVec = new WVec3(side.getDirectionVec());
 
-            for (double xSearch = 0.1D; xSearch < 0.9D; xSearch += 0.1D) {
-                for (double ySearch = 0.1D; ySearch < 0.9D; ySearch += 0.1D) {
-                    for (double zSearch = 0.1D; zSearch < 0.9D; zSearch += 0.1D) {
+            for (double xSearch = 0.5D - (xzRV / 2); xSearch <= 0.5D + (xzRV / 2); xSearch += xzSSV) {
+                for (double ySearch = 0.5D - (yRV / 2); ySearch <= 0.5D + (yRV / 2); ySearch += ySSV) {
+                    for (double zSearch = 0.5D - (xzRV / 2); zSearch <= 0.5D + (xzRV / 2); zSearch += xzSSV) {
                         final WVec3 posVec = new WVec3(blockPosition).addVector(xSearch, ySearch, zSearch);
                         final double distanceSqPosVec = eyesPos.squareDistanceTo(posVec);
                         final WVec3 hitVec = posVec.add(new WVec3(dirVec.getXCoord() * 0.5, dirVec.getYCoord() * 0.5, dirVec.getZCoord() * 0.5));
@@ -491,26 +851,32 @@ public class Scaffold extends Module {
                             continue;
 
                         // face block
-                        final double diffX = hitVec.getXCoord() - eyesPos.getXCoord();
-                        final double diffY = hitVec.getYCoord() - eyesPos.getYCoord();
-                        final double diffZ = hitVec.getZCoord() - eyesPos.getZCoord();
+                        for (int i = 0; i < (staticYawMode ? 2 : 1); i++) {
+                            final double diffX = staticYawMode && i == 0 ? 0 : hitVec.getXCoord() - eyesPos.getXCoord();
+                            final double diffY = hitVec.getYCoord() - eyesPos.getYCoord();
+                            final double diffZ = staticYawMode && i == 1 ? 0 : hitVec.getZCoord() - eyesPos.getZCoord();
 
-                        final double diffXZ = Math.sqrt(diffX * diffX + diffZ * diffZ);
+                            final double diffXZ = Math.sqrt(diffX * diffX + diffZ * diffZ);
 
-                        final Rotation rotation = new Rotation(
-                                WMathHelper.wrapAngleTo180_float((float) Math.toDegrees(Math.atan2(diffZ, diffX)) - 90F),
-                                WMathHelper.wrapAngleTo180_float((float) -Math.toDegrees(Math.atan2(diffY, diffXZ)))
-                        );
+                            final float pitch = staticPitchMode ? staticPitch : WMathHelper.wrapAngleTo180_float((float) -Math.toDegrees(Math.atan2(diffY, diffXZ)));
+                            final Rotation rotation = new Rotation(
+                                    WMathHelper.wrapAngleTo180_float((float) Math.toDegrees(Math.atan2(diffZ, diffX)) - 90F +
+                                            (staticYawMode ? staticYawOffset : 0)), pitch);
 
-                        final WVec3 rotationVector = RotationUtils.getVectorForRotation(rotation);
-                        final WVec3 vector = eyesPos.addVector(rotationVector.getXCoord() * 4, rotationVector.getYCoord() * 4, rotationVector.getZCoord() * 4);
-                        final IMovingObjectPosition obj = mc.getTheWorld().rayTraceBlocks(eyesPos, vector, false, false, true);
+                            final WVec3 rotationVector = RotationUtils.getVectorForRotation(rotation);
+                            final WVec3 vector = eyesPos.addVector(rotationVector.getXCoord() * 4, rotationVector.getYCoord() * 4, rotationVector.getZCoord() * 4);
+                            final IMovingObjectPosition obj = mc.getTheWorld().rayTraceBlocks(eyesPos, vector, false, false, true);
 
-                        if (obj.getTypeOfHit() != IMovingObjectPosition.WMovingObjectType.BLOCK || !obj.getBlockPos().equals(neighbor))
-                            continue;
+                            if (!(obj.getTypeOfHit() == IMovingObjectPosition.WMovingObjectType.BLOCK && obj.getBlockPos().equals(neighbor)))
+                                continue;
 
-                        if (placeRotation == null || RotationUtils.getRotationDifference(rotation) < RotationUtils.getRotationDifference(placeRotation.getRotation()))
-                            placeRotation = new PlaceRotation(new PlaceInfo(neighbor, side.getOpposite(), hitVec), rotation);
+                            if (placeRotation == null || RotationUtils.getRotationDifference(rotation) < RotationUtils.getRotationDifference(placeRotation.getRotation())) {
+                                placeRotation = new PlaceRotation(new PlaceInfo(neighbor, side.getOpposite(), hitVec), rotation);
+                            }
+                            xSearchFace = xSearch;
+                            ySearchFace = ySearch;
+                            zSearchFace = zSearch;
+                        }
                     }
                 }
             }
@@ -518,16 +884,58 @@ public class Scaffold extends Module {
 
         if (placeRotation == null) return false;
 
-        if (rotationsValue.get()) {
-            RotationUtils.setTargetRotation(placeRotation.getRotation(), keepLengthValue.get());
-            lockRotation = placeRotation.getRotation();
+        if (!rotationModeValue.get().equalsIgnoreCase("Off")) {
+            if (minTurnSpeedValue.get() < 180) {
+                limitedRotation = RotationUtils.limitAngleChange(RotationUtils.serverRotation, placeRotation.getRotation(), (float) (Math.random() * (maxTurnSpeedValue.get() - minTurnSpeedValue.get()) + minTurnSpeedValue.get()));
+                setRotation(limitedRotation, keepLengthValue.get());
+                lockRotation = limitedRotation;
+
+                facesBlock = false;
+                for (final EnumFacingType facingType : EnumFacingType.values()) {
+                    IEnumFacing side = classProvider.getEnumFacing(facingType);
+                    final WBlockPos neighbor = blockPosition.offset(side);
+
+                    if (!BlockUtils.canBeClicked(neighbor))
+                        continue;
+
+                    final WVec3 dirVec = new WVec3(side.getDirectionVec());
+
+                    final WVec3 posVec = new WVec3(blockPosition).addVector(xSearchFace, ySearchFace, zSearchFace);
+                    final double distanceSqPosVec = eyesPos.squareDistanceTo(posVec);
+                    final WVec3 hitVec = posVec.add(new WVec3(dirVec.getXCoord() * 0.5, dirVec.getYCoord() * 0.5, dirVec.getZCoord() * 0.5));
+
+                    if (checks && (eyesPos.squareDistanceTo(hitVec) > 18D || distanceSqPosVec > eyesPos.squareDistanceTo(posVec.add(dirVec)) || mc.getTheWorld().rayTraceBlocks(eyesPos, hitVec, false, true, false) != null))
+                        continue;
+
+                    final WVec3 rotationVector = RotationUtils.getVectorForRotation(limitedRotation);
+                    final WVec3 vector = eyesPos.addVector(rotationVector.getXCoord() * 4, rotationVector.getYCoord() * 4, rotationVector.getZCoord() * 4);
+                    final IMovingObjectPosition obj = mc.getTheWorld().rayTraceBlocks(eyesPos, vector, false, false, true);
+
+                    if (!(obj.getTypeOfHit() == IMovingObjectPosition.WMovingObjectType.BLOCK && obj.getBlockPos().equals(neighbor)))
+                        continue;
+                    facesBlock = true;
+                    break;
+                }
+            } else {
+                setRotation(placeRotation.getRotation(), keepLengthValue.get());
+                lockRotation = placeRotation.getRotation();
+                facesBlock = true;
+            }
         }
         targetPlace = placeRotation.getPlaceInfo();
         return true;
     }
 
+    private double calcStepSize(double range) {
+        double accuracy = searchAccuracyValue.get();
+        accuracy += accuracy % 2; // If it is set to uneven it changes it to even. Fixes a bug
+        if (range / accuracy < 0.01D)
+            return 0.01D;
+        return range / accuracy;
+    }
+
     /**
-     * @return hotbar blocks amount
+     * @Wow. You are really good! Thank you for reading!
      */
     private int getBlocksAmount() {
         int amount = 0;
@@ -539,6 +947,8 @@ public class Scaffold extends Module {
                 final IBlock block = (itemStack.getItem().asItemBlock()).getBlock();
 
                 if (mc.getThePlayer().getHeldItem().equals(itemStack) || !InventoryUtils.BLOCK_BLACKLIST.contains(block))
+
+                if (itemStack != null && itemStack.equals(itemStack) || !InventoryUtils.BLOCK_BLACKLIST.contains(block))
                     amount += itemStack.getStackSize();
             }
         }

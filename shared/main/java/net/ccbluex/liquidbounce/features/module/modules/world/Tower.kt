@@ -100,6 +100,9 @@ class Tower : Module() {
         }
     }
 
+    /**
+     * @WTF, what are you doing here?????
+     */
     @EventTarget
     fun onMotion(event: MotionEvent) {
         if (onJumpValue.get() && !mc.gameSettings.keyBindJump.isKeyDown) return
@@ -152,7 +155,7 @@ class Tower : Module() {
     }
 
     /**
-     * Move player
+     * @Did you read rules?
      */
     private fun move() {
         val thePlayer = mc.thePlayer ?: return
@@ -229,7 +232,7 @@ class Tower : Module() {
     }
 
     /**
-     * Place target block
+     * It seems you didn't read the rules.
      */
     private fun place() {
         if (placeInfo == null) return
@@ -265,10 +268,7 @@ class Tower : Module() {
     }
 
     /**
-     * Search for placeable block
-     *
-     * @param blockPosition pos
-     * @return
+     * @Read rules and go back here.
      */
     private fun search(blockPosition: WBlockPos): Boolean {
         val thePlayer = mc.thePlayer ?: return false
@@ -336,6 +336,9 @@ class Tower : Module() {
         return true
     }
 
+    /**
+     * @Ehh... Read the whole code....
+     */
     @EventTarget
     fun onPacket(event: PacketEvent) {
         if (mc.thePlayer == null) return
@@ -346,9 +349,7 @@ class Tower : Module() {
     }
 
     /**
-     * Tower visuals
-     *
-     * @param event
+     * @Its not a warning, its a error.
      */
     @EventTarget
     fun onRender2D(event: Render2DEvent) {
@@ -380,7 +381,7 @@ class Tower : Module() {
     }
 
     /**
-     * @return hotbar blocks amount
+     * @idk what is here
      */
     private val blocksAmount: Int
         get() {

@@ -15,7 +15,9 @@ import net.ccbluex.liquidbounce.event.EventTarget;
 import net.ccbluex.liquidbounce.event.Listenable;
 import net.ccbluex.liquidbounce.event.PacketEvent;
 import net.ccbluex.liquidbounce.event.TickEvent;
+import net.ccbluex.liquidbounce.features.module.ModuleManager;
 import net.ccbluex.liquidbounce.features.module.modules.combat.FastBow;
+import net.ccbluex.liquidbounce.features.module.modules.combat.KillAura2;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Random;
@@ -178,6 +180,45 @@ public final class RotationUtils extends MinecraftInstance implements Listenable
         for(double xSearch = 0.15D; xSearch < 0.85D; xSearch += 0.1D) {
             for (double ySearch = 0.15D; ySearch < 1D; ySearch += 0.1D) {
                 for (double zSearch = 0.15D; zSearch < 0.85D; zSearch += 0.1D) {
+                    final WVec3 vec3 = new WVec3(bb.getMinX() + (bb.getMaxX() - bb.getMinX()) * xSearch,
+                            bb.getMinY() + (bb.getMaxY() - bb.getMinY()) * ySearch, bb.getMinZ() + (bb.getMaxZ() - bb.getMinZ()) * zSearch);
+                    final Rotation rotation = toRotation(vec3, predict);
+                    final double vecDist = eyes.distanceTo(vec3);
+
+                    if (vecDist > distance)
+                        continue;
+
+                    if (throughWalls || isVisible(vec3)) {
+                        final VecRotation currentVec = new VecRotation(vec3, rotation);
+
+                        if (vecRotation == null || (random ? getRotationDifference(currentVec.getRotation(), randomRotation) < getRotationDifference(vecRotation.getRotation(), randomRotation) : getRotationDifference(currentVec.getRotation()) < getRotationDifference(vecRotation.getRotation())))
+                            vecRotation = currentVec;
+                    }
+                }
+            }
+        }
+
+        return vecRotation;
+    }
+
+    public static VecRotation searchCenter2(final IAxisAlignedBB bb, final boolean outborder, final boolean random,
+                                           final boolean predict, final boolean throughWalls, final float distance) {
+        final KillAura2 killaura3 = (KillAura2) LiquidBounce.moduleManager.getModule(KillAura2.class);
+        if (outborder) {
+            final WVec3 vec3 = new WVec3(bb.getMinX() + (bb.getMaxX() - bb.getMinX()) * (x * killaura3.getRandomCenterXValue1().get() + killaura3.getRandomCenterXValue2().get()), bb.getMinY() + (bb.getMaxY() - bb.getMinY()) * (y * killaura3.getRandomCenterYValue1().get() + killaura3.getRandomCenterYValue2().get()), bb.getMinZ() + (bb.getMaxZ() - bb.getMinZ()) * (z * killaura3.getRandomCenterZValue1().get() + killaura3.getRandomCenterZValue2().get()));
+            return new VecRotation(vec3, toRotation(vec3, predict));
+        }
+
+        final WVec3 randomVec = new WVec3(bb.getMinX() + (bb.getMaxX() - bb.getMinX()) * x * killaura3.getRandomCenterVecRotXValue().get(), bb.getMinY() + (bb.getMaxY() - bb.getMinY()) * y * killaura3.getRandomCenterVecRotYValue().get(), bb.getMinZ() + (bb.getMaxZ() - bb.getMinZ()) * z * killaura3.getRandomCenterVecRotZValue().get());
+        final Rotation randomRotation = toRotation(randomVec, predict);
+
+        final WVec3 eyes = mc.getThePlayer().getPositionEyes(1F);
+
+        VecRotation vecRotation = null;
+
+        for(double xSearch = 0.15D; xSearch < 0.85D; xSearch += killaura3.getRandomCenterRandomVecXValue().get()) {
+            for (double ySearch = 0.15D; ySearch < 1D; ySearch += killaura3.getRandomCenterRandomVecYValue().get()) {
+                for (double zSearch = 0.15D; zSearch < 0.85D; zSearch += killaura3.getRandomCenterRandomVecZValue().get()) {
                     final WVec3 vec3 = new WVec3(bb.getMinX() + (bb.getMaxX() - bb.getMinX()) * xSearch,
                             bb.getMinY() + (bb.getMaxY() - bb.getMinY()) * ySearch, bb.getMinZ() + (bb.getMaxZ() - bb.getMinZ()) * zSearch);
                     final Rotation rotation = toRotation(vec3, predict);
