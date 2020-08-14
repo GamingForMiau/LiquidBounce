@@ -108,6 +108,7 @@ object LiquidBounce {
 
             // ScriptManager
             scriptManager = ScriptManager()
+            scriptManager.refreshAuthority()
             scriptManager.loadScripts()
             scriptManager.enableScripts()
         } catch (throwable: Throwable) {

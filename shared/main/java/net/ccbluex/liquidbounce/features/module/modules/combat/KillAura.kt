@@ -6,6 +6,7 @@
 package net.ccbluex.liquidbounce.features.module.modules.combat
 
 import net.ccbluex.liquidbounce.LiquidBounce
+import net.ccbluex.liquidbounce.api.MinecraftVersion
 import net.ccbluex.liquidbounce.api.enums.EnumFacingType
 import net.ccbluex.liquidbounce.api.enums.WEnumHand
 import net.ccbluex.liquidbounce.api.minecraft.client.entity.IEntity
@@ -159,6 +160,10 @@ class KillAura : Module() {
 
     // Fake block status
     var blockingStatus = false
+
+    init {
+        cooldownValue.isSupported = Backend.REPRESENTED_BACKEND_VERSION != MinecraftVersion.MC_1_8
+    }
 
     /**
      * Enable kill aura module
@@ -645,4 +650,7 @@ class KillAura : Module() {
      */
     override val tag: String?
         get() = targetModeValue.get()
+
+    val isBlockingChestAura: Boolean
+        get() = state && target != null
 }
