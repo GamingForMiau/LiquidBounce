@@ -17,7 +17,7 @@ import net.ccbluex.liquidbounce.utils.MovementUtils
 import net.ccbluex.liquidbounce.utils.timer.MSTimer
 import net.ccbluex.liquidbounce.value.IntegerValue
 import net.ccbluex.liquidbounce.value.ListValue
-import net.minecraft.network.play.client.CPacketPlayer
+import net.minecraft.network.play.client.C03PacketPlayer
 
 @ModuleInfo(name = "Criticals", description = "Automatically deals critical hits.", category = ModuleCategory.COMBAT)
 class Criticals : Module() {
@@ -130,9 +130,9 @@ class Criticals : Module() {
 
         val packet = event.packet
 
-        if (packet is CPacketPlayer && modeValue.get().equals("NoGround", ignoreCase = true) && noGroundModeValue.get().equals("Normal", ignoreCase = true))
+        if (packet is C03PacketPlayer && modeValue.get().equals("NoGround", ignoreCase = true) && noGroundModeValue.get().equals("Normal", ignoreCase = true))
             packet.onGround = false
-        if(packet is CPacketPlayer && modeValue.get().equals("NoGround", ignoreCase = true) && noGroundModeValue.get().equals("NCP", ignoreCase = true) && !thePlayer.onGround && !thePlayer.isCollidedVertically && thePlayer.fallDistance < 2)
+        if (packet is C03PacketPlayer && modeValue.get().equals("NoGround", ignoreCase = true) && noGroundModeValue.get().equals("NCP", ignoreCase = true) && !thePlayer.onGround && !thePlayer.isCollidedVertically && thePlayer.fallDistance < 2)
             packet.onGround = true
     }
 
