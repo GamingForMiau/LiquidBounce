@@ -75,51 +75,52 @@ class Criticals : Module() {
                     thePlayer.setPosition(x, y + 0.01, z)
                 }
                 "jump" -> thePlayer.motionY = 0.42
-            }
-
-            when (packetModeValue.get().toLowerCase()) {
-                "normal" -> {
-                    mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(x, y + 0.0625, z, true))
-                    mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(x, y, z, false))
-                    mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(x, y + 1.1E-5, z, false))
-                    mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(x, y, z, false))
-                    thePlayer.onCriticalHit(entity)
-                }
-                "oldncp" -> {
-                    mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(thePlayer.posX, thePlayer.posY + 0.1625, thePlayer.posZ, false))
-                    mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(thePlayer.posX, thePlayer.posY, thePlayer.posZ, false))
-                    mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(thePlayer.posX, thePlayer.posY + 4.0E-6, thePlayer.posZ, false))
-                    mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(thePlayer.posX, thePlayer.posY, thePlayer.posZ, false))
-                    mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(thePlayer.posX, thePlayer.posY + 1.0E-6, thePlayer.posZ, false))
-                    mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(thePlayer.posX, thePlayer.posY, thePlayer.posZ, false))
-                    mc.netHandler.addToSendQueue(classProvider.createCPacketPlayer(false))
-                    thePlayer.onCriticalHit(entity)
-                }
-                "fakejump" -> {
-                    mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(thePlayer.posX, thePlayer.posY + 0.42, thePlayer.posZ, false))
-                    mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(thePlayer.posX, thePlayer.posY, thePlayer.posZ, false))
-                    thePlayer.onCriticalHit(entity)
-                }
-                "normal2" -> {
-                    mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(x, y + 0.11, z, false))
-                    mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(x, y + 0.1100013579, z, false))
-                    mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(x, y + 0.0000013579, z, false))
-                    thePlayer.onCriticalHit(entity)
-                }
-                "normal3" -> {
-                    mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(thePlayer.posX, thePlayer.posY + 0.05000000074505806, thePlayer.posZ, false))
-                    mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(thePlayer.posX, thePlayer.posY, thePlayer.posZ, false))
-                    mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(thePlayer.posX, thePlayer.posY + 0.012511000037193298, thePlayer.posZ, false))
-                    mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(thePlayer.posX, thePlayer.posY, thePlayer.posZ, false))
-                }
-            }
-
-            when (noGroundModeValue.get().toLowerCase()) {
-                "normal2" -> {
-                    thePlayer.onCriticalHit(entity)
-                }
                 "visual" -> thePlayer.onCriticalHit(entity)
             }
+
+            if (packetModeValue.get().toLowerCase() == "packet")
+                when (packetModeValue.get().toLowerCase()) {
+                    "normal" -> {
+                        mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(x, y + 0.0625, z, true))
+                        mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(x, y, z, false))
+                        mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(x, y + 1.1E-5, z, false))
+                        mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(x, y, z, false))
+                        thePlayer.onCriticalHit(entity)
+                    }
+                    "oldncp" -> {
+                        mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(thePlayer.posX, thePlayer.posY + 0.1625, thePlayer.posZ, false))
+                        mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(thePlayer.posX, thePlayer.posY, thePlayer.posZ, false))
+                        mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(thePlayer.posX, thePlayer.posY + 4.0E-6, thePlayer.posZ, false))
+                        mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(thePlayer.posX, thePlayer.posY, thePlayer.posZ, false))
+                        mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(thePlayer.posX, thePlayer.posY + 1.0E-6, thePlayer.posZ, false))
+                        mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(thePlayer.posX, thePlayer.posY, thePlayer.posZ, false))
+                        mc.netHandler.addToSendQueue(classProvider.createCPacketPlayer(false))
+                        thePlayer.onCriticalHit(entity)
+                    }
+                    "fakejump" -> {
+                        mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(thePlayer.posX, thePlayer.posY + 0.42, thePlayer.posZ, false))
+                        mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(thePlayer.posX, thePlayer.posY, thePlayer.posZ, false))
+                        thePlayer.onCriticalHit(entity)
+                    }
+                    "normal2" -> {
+                        mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(x, y + 0.11, z, false))
+                        mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(x, y + 0.1100013579, z, false))
+                        mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(x, y + 0.0000013579, z, false))
+                        thePlayer.onCriticalHit(entity)
+                    }
+                    "normal3" -> {
+                        mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(thePlayer.posX, thePlayer.posY + 0.05000000074505806, thePlayer.posZ, false))
+                        mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(thePlayer.posX, thePlayer.posY, thePlayer.posZ, false))
+                        mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(thePlayer.posX, thePlayer.posY + 0.012511000037193298, thePlayer.posZ, false))
+                        mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerPosition(thePlayer.posX, thePlayer.posY, thePlayer.posZ, false))
+                    }
+                }
+            if (packetModeValue.get().toLowerCase() == "noground")
+                when (noGroundModeValue.get().toLowerCase()) {
+                    "normal2" -> {
+                        thePlayer.onCriticalHit(entity)
+                    }
+                }
 
             msTimer.reset()
         }
