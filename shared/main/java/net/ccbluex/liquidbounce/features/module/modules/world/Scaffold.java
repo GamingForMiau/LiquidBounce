@@ -101,7 +101,7 @@ public class Scaffold extends Module {
 
     // Rotations
     public final BoolValue clientSideRotationsValue = new BoolValue("SilentRotation", false);
-    public final ListValue rotationModeValue = new ListValue("RotationMode", new String[]{"Normal", "Silent", "StaticPitch", "StaticYaw", "Off"}, "Normal");
+    public final ListValue rotationModeValue = new ListValue("RotationMode", new String[]{"Normal", "Static", "StaticPitch", "StaticYaw", "Off"}, "Normal");
     private final BoolValue keepRotationValue = new BoolValue("KeepRotation", false);
     private final IntegerValue keepLengthValue = new IntegerValue("KeepRotationLength", 0, 0, 20);
     private final FloatValue staticPitchValue = new FloatValue("StaticPitchOffset", 86F, 70F, 90F);
@@ -692,7 +692,7 @@ public class Scaffold extends Module {
         if (!BlockUtils.isReplaceable(blockPosition))
             return false;
         // StaticModes
-        final boolean staticMode = rotationModeValue.get().equalsIgnoreCase("Silent");
+        final boolean staticMode = rotationModeValue.get().equalsIgnoreCase("Static");
         final boolean staticPitchMode = staticMode || rotationModeValue.get().equalsIgnoreCase("StaticPitch");
         final boolean staticYawMode = staticMode || rotationModeValue.get().equalsIgnoreCase("StaticYaw");
         final float staticPitch = staticPitchValue.get();
