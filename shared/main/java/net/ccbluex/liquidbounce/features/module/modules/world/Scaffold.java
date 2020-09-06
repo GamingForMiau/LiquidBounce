@@ -459,6 +459,7 @@ public class Scaffold extends Module {
         if (!rotationStrafeValue.get())
             return;
         RotationUtils.serverRotation.applyStrafeToPlayer(event);
+        event.cancelEvent();
     }
 
     /**
