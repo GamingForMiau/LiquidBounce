@@ -32,8 +32,6 @@ import net.ccbluex.liquidbounce.value.FloatValue;
 import net.ccbluex.liquidbounce.value.IntegerValue;
 import net.ccbluex.liquidbounce.value.ListValue;
 import org.lwjgl.opengl.GL11;
-import net.ccbluex.liquidbounce.utils.Rotation;
-import net.ccbluex.liquidbounce.features.module.modules.world.ScaffoldAddon;
 
 import java.awt.*;
 
@@ -79,7 +77,7 @@ public class Scaffold extends Module {
         protected void onChanged(final Boolean oldValue, final Boolean newValue) {
             if (newValue)
                 autoBlockValue.set(false);
-                stayAutoBlock.set(false);
+            stayAutoBlock.set(false);
         }
     };
 
@@ -166,7 +164,7 @@ public class Scaffold extends Module {
     // Game
     private final FloatValue timerValue = new FloatValue("Timer", 1F, 0.1F, 10F);
     private final FloatValue speedModifierValue = new FloatValue("SpeedModifier", 1F, 0, 2F);
-    private final BoolValue  slowValue = new BoolValue("Slow", false) {
+    private final BoolValue slowValue = new BoolValue("Slow", false) {
         @Override
         protected void onChanged(final Boolean oldValue, final Boolean newValue) {
             if (newValue)
@@ -243,7 +241,7 @@ public class Scaffold extends Module {
      */
     @EventTarget
     public void onUpdate(final UpdateEvent event) {
-        if(autoBlockSetValue.get()) {
+        if (autoBlockSetValue.get()) {
 
             blockSlot = InventoryUtils.findAutoBlockBlock();
 
@@ -270,13 +268,13 @@ public class Scaffold extends Module {
         if (shouldGoDown)
             mc.getGameSettings().getKeyBindSneak().setPressed(false);
 
-        if(slowValue.get()) {
+        if (slowValue.get()) {
             mc.getThePlayer().setMotionX(mc.getThePlayer().getMotionX() * slowSpeed.get());
             mc.getThePlayer().setMotionZ(mc.getThePlayer().getMotionZ() * slowSpeed.get());
         }
 
         shouldSprint = sprintValue.get() && mc.getGameSettings().isKeyDown(mc.getGameSettings().getKeyBindSprint());
-        if(sprintValue.get()) {
+        if (sprintValue.get()) {
             if (!mc.getGameSettings().isKeyDown(mc.getGameSettings().getKeyBindSprint())) {
                 mc.getGameSettings().getKeyBindSprint().setPressed(false);
             }
@@ -460,120 +458,7 @@ public class Scaffold extends Module {
 
         if (!rotationStrafeValue.get())
             return;
-
-        if (lockRotation != null && keepRotationValue.get()) {
-            final int dif = (int) ((WMathHelper.wrapAngleTo180_float(mc.getThePlayer().getRotationYaw() - (minTurnSpeedValue.get() < 180 ? limitedRotation : lockRotation).getYaw()
-                    - 23.5F - 135)
-                    + 180) / 45);
-
-            final float yaw = (minTurnSpeedValue.get() < 180 ? limitedRotation : lockRotation).getYaw();
-            final float strafe = event.getStrafe();
-            final float forward = event.getForward();
-            final float friction = event.getFriction();
-            float calcForward = 0F;
-            float calcStrafe = 0F;
-            /*
-            Rotation Dif
-
-            7 \ 0 / 1     +  +  +      +  |  -
-            6   +   2     -- F --      +  S  -
-            5 / 4 \ 3     -  -  -      +  |  -
-            */
-            switch (dif) {
-                case 0: {
-                    calcForward = forward;
-                    calcStrafe = strafe;
-                    break;
-                }
-                case 1: {
-                    calcForward += forward;
-                    calcStrafe -= forward;
-                    calcForward += strafe;
-                    calcStrafe += strafe;
-                    break;
-                }
-                case 2: {
-                    calcForward = strafe;
-                    calcStrafe = -forward;
-                    break;
-                }
-                case 3: {
-                    calcForward -= forward;
-                    calcStrafe -= forward;
-                    calcForward += strafe;
-                    calcStrafe -= strafe;
-                    break;
-                }
-                case 4: {
-                    calcForward = -forward;
-                    calcStrafe = -strafe;
-                    break;
-                }
-                case 5: {
-                    calcForward -= forward;
-                    calcStrafe += forward;
-                    calcForward -= strafe;
-                    calcStrafe -= strafe;
-                    break;
-                }
-                case 6: {
-                    calcForward = -strafe;
-                    calcStrafe = forward;
-                    break;
-                }
-                case 7: {
-                    calcForward += forward;
-                    calcStrafe += forward;
-                    calcForward -= strafe;
-                    calcStrafe += strafe;
-                    break;
-                }
-            }
-
-            if (calcForward > 1F) {
-                calcForward *= ScaffoldAddon.calcForward1Value.get();
-            } else if (calcForward < 0.9F && calcForward > 0.3F) {
-                calcForward *= ScaffoldAddon.calcForward2Value.get();
-            }
-            if (calcForward < -1F) {
-                calcForward *= ScaffoldAddon.calcForward3Value.get();
-            } else if (calcForward > -0.9F && calcForward < -0.3F) {
-                calcForward *= ScaffoldAddon.calcForward4Value.get();
-            }
-
-            if (calcStrafe > 1F) {
-                calcStrafe *= ScaffoldAddon.calcStrafe1Value.get();
-            } else if (calcStrafe < 0.9F && calcStrafe > 0.3F) {
-                calcStrafe *= ScaffoldAddon.calcStrafe2Value.get();
-            }
-            if (calcStrafe < -1F) {
-                calcStrafe *= ScaffoldAddon.calcStrafe3Value.get();
-            } else if (calcStrafe > -0.9F && calcStrafe < -0.3F) {
-                calcStrafe *= ScaffoldAddon.calcStrafe4Value.get();
-            }
-
-            float f = calcStrafe * calcStrafe + calcForward * calcForward;
-
-            if (f >= 1.0E-4F) {
-                f = (float)Math.sqrt((double)f);
-
-                if (f < 1.0F)
-                    f = 1.0F;
-
-                f = friction / f;
-                calcStrafe *= f;
-                calcForward *= f;
-
-                float yawCos = (float)((double)yaw * 3.141592653589793D / (double)180.0F);
-                float yawSin = (float)Math.sin((double)yawCos);
-                float var15 = (float)((double)yaw * 3.141592653589793D / (double)180.0F);
-                yawCos = (float)Math.cos((double)var15);
-
-                mc.getThePlayer().setMotionX(mc.getThePlayer().getMotionX() + calcStrafe * yawCos - calcForward * yawSin);
-                mc.getThePlayer().setMotionZ(mc.getThePlayer().getMotionZ() + calcForward * yawCos + calcStrafe * yawSin);
-            }
-            event.cancelEvent();
-        }
+        RotationUtils.serverRotation.applyStrafeToPlayer(event);
     }
 
     /**
@@ -949,8 +834,8 @@ public class Scaffold extends Module {
 
                 if (mc.getThePlayer().getHeldItem().equals(itemStack) || !InventoryUtils.BLOCK_BLACKLIST.contains(block))
 
-                if (itemStack != null && itemStack.equals(itemStack) || !InventoryUtils.BLOCK_BLACKLIST.contains(block) && !classProvider.isBlockBush(block))
-                    amount += itemStack.getStackSize();
+                    if (itemStack != null && itemStack.equals(itemStack) || !InventoryUtils.BLOCK_BLACKLIST.contains(block) && !classProvider.isBlockBush(block))
+                        amount += itemStack.getStackSize();
             }
         }
 
