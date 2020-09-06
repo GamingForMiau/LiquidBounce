@@ -197,9 +197,7 @@ class Velocity : Module() {
                     event.cancelEvent()
                 }
             }
-        }
-
-        if (classProvider.isSPacketExplosion(packet) && modeValue.get().equals("Tesla", ignoreCase = true)) {
+        } else if (classProvider.isSPacketExplosion(packet) && modeValue.get().equals("Tesla", ignoreCase = true)) {
             event.cancelEvent()
         }
     }

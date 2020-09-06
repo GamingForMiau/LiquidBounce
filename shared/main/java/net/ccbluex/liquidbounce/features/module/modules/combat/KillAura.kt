@@ -27,6 +27,9 @@ import net.ccbluex.liquidbounce.features.module.modules.render.FreeCam
 import net.ccbluex.liquidbounce.injection.backend.Backend
 import net.ccbluex.liquidbounce.utils.*
 import net.ccbluex.liquidbounce.utils.extensions.getDistanceToEntityBox
+import net.ccbluex.liquidbounce.utils.extensions.isAnimal
+import net.ccbluex.liquidbounce.utils.extensions.isClientFriend
+import net.ccbluex.liquidbounce.utils.extensions.isMob
 import net.ccbluex.liquidbounce.utils.misc.RandomUtils
 import net.ccbluex.liquidbounce.utils.render.RenderUtils
 import net.ccbluex.liquidbounce.utils.timer.MSTimer
@@ -473,10 +476,12 @@ class KillAura : Module() {
                 return false
 
             if (EntityUtils.targetPlayer && classProvider.isEntityPlayer(entity)) {
-                if (entity.asEntityPlayer().spectator || AntiBot.isBot(entity.asEntityLivingBase()))
+                val player = entity.asEntityPlayer()
+
+                if (player.spectator || AntiBot.isBot(player))
                     return false
 
-                if (EntityUtils.isFriend(entity) && !LiquidBounce.moduleManager[NoFriends::class.java].state)
+                if (player.isClientFriend() && !LiquidBounce.moduleManager[NoFriends::class.java].state)
                     return false
 
                 val teams = LiquidBounce.moduleManager[Teams::class.java] as Teams
@@ -484,8 +489,7 @@ class KillAura : Module() {
                 return !teams.state || !teams.isInYourTeam(entity.asEntityLivingBase())
             }
 
-            return EntityUtils.targetMobs && EntityUtils.isMob(entity) || EntityUtils.targetAnimals &&
-                    EntityUtils.isAnimal(entity)
+            return EntityUtils.targetMobs && entity.isMob() || EntityUtils.targetAnimals && entity.isAnimal()
         }
 
         return false
@@ -608,12 +612,37 @@ class KillAura : Module() {
 
 
             if (raycastValue.get() && raycastedEntity != null && classProvider.isEntityLivingBase(raycastedEntity)
-                    && (LiquidBounce.moduleManager[NoFriends::class.java].state || !EntityUtils.isFriend(raycastedEntity)))
+                    && (LiquidBounce.moduleManager[NoFriends::class.java].state || !(classProvider.isEntityPlayer(raycastedEntity) && raycastedEntity.asEntityPlayer().isClientFriend())))
                 currentTarget = raycastedEntity.asEntityLivingBase()
 
             hitable = if (maxTurnSpeed.get() > 0F) currentTarget == raycastedEntity else true
         } else
             hitable = RotationUtils.isFaced(currentTarget, reach)
+    }
+
+    /**
+     * Start blocking
+     */
+    private fun startBlocking(interactEntity: IEntity, interact: Boolean) {
+        if (interact) {
+            // val vec3 = Vec3(movingObject.hitVec.xCoord - interactEntity.posX, movingObject.hitVec.yCoord - interactEntity.posY, movingObject.hitVec.zCoord - interactEntity.posZ)
+            mc.netHandler.addToSendQueue(classProvider.createCPacketUseEntity(interactEntity, interactEntity.positionVector))
+            mc.netHandler.addToSendQueue(classProvider.createCPacketUseEntity(interactEntity, ICPacketUseEntity.WAction.INTERACT))
+        }
+
+        mc.netHandler.addToSendQueue(createUseItemPacket(mc.thePlayer!!.inventory.getCurrentItemInHand(), WEnumHand.MAIN_HAND))
+        blockingStatus = true
+    }
+
+
+    /**
+     * Stop blocking
+     */
+    private fun stopBlocking() {
+        if (blockingStatus) {
+            mc.netHandler.addToSendQueue(classProvider.createCPacketPlayerDigging(ICPacketPlayerDigging.WAction.RELEASE_USE_ITEM, WBlockPos.ORIGIN, classProvider.getEnumFacing(EnumFacingType.DOWN)))
+            blockingStatus = false
+        }
     }
 
     /**

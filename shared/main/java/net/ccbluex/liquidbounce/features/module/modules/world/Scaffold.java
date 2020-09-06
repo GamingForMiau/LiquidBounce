@@ -668,7 +668,8 @@ public class Scaffold extends Module {
         int blockSlot = -1;
         IItemStack itemStack = mc.getThePlayer().getHeldItem();
 
-        if (mc.getThePlayer().getHeldItem() == null || !(classProvider.isItemBlock(mc.getThePlayer().getHeldItem().getItem())) || mc.getThePlayer().getHeldItem().getStackSize() <= 0) {
+        if (itemStack == null || !classProvider.isItemBlock(itemStack.getItem()) ||
+                classProvider.isBlockBush(itemStack.getItem().asItemBlock().getBlock()) || mc.getThePlayer().getHeldItem().getStackSize() <= 0) {
             if (!autoBlockValue.get())
                 return;
 
@@ -948,7 +949,7 @@ public class Scaffold extends Module {
 
                 if (mc.getThePlayer().getHeldItem().equals(itemStack) || !InventoryUtils.BLOCK_BLACKLIST.contains(block))
 
-                if (itemStack != null && itemStack.equals(itemStack) || !InventoryUtils.BLOCK_BLACKLIST.contains(block))
+                if (itemStack != null && itemStack.equals(itemStack) || !InventoryUtils.BLOCK_BLACKLIST.contains(block) && !classProvider.isBlockBush(block))
                     amount += itemStack.getStackSize();
             }
         }

@@ -22,7 +22,7 @@ import net.minecraft.network.play.client.C03PacketPlayer
 @ModuleInfo(name = "Criticals", description = "Automatically deals critical hits.", category = ModuleCategory.COMBAT)
 class Criticals : Module() {
 
-    val modeValue = ListValue("Mode", arrayOf("Packet", "NoGround", "Hop", "TPHop", "Jump", "LowJump", "Shit"), "Packet")
+    val modeValue = ListValue("Mode", arrayOf("Packet", "NoGround", "Hop", "TPHop", "Jump", "LowJump", "Visual", "Shit"), "Packet")
     val delayValue = IntegerValue("Delay", 0, 0, 500)
     val noGroundModeValue = ListValue("NoGroundMode", arrayOf("Normal", "Normal2", "NCP"), "Normal")
     val packetModeValue = ListValue("PacketMode", arrayOf("Normal", "Normal2", "Normal3", "OldNCP", "FakeJump"), "OldNCP")
@@ -46,7 +46,7 @@ class Criticals : Module() {
 
             if (!thePlayer.onGround || thePlayer.isOnLadder || thePlayer.isInWeb || thePlayer.isInWater ||
                     thePlayer.isInLava || thePlayer.ridingEntity != null || entity.hurtTime > hurtTimeValue.get() ||
-                    LiquidBounce.moduleManager[Fly::class.java]!!.state || !msTimer.hasTimePassed(delayValue.get().toLong()))
+                    LiquidBounce.moduleManager[Fly::class.java].state || !msTimer.hasTimePassed(delayValue.get().toLong()))
                 return
 
             val x = thePlayer.posX
@@ -118,6 +118,7 @@ class Criticals : Module() {
                 "normal2" -> {
                     thePlayer.onCriticalHit(entity)
                 }
+                "visual" -> thePlayer.onCriticalHit(entity)
             }
 
             msTimer.reset()
