@@ -96,6 +96,9 @@ public class Scaffold extends Module {
     // Expand
     private final IntegerValue expandLengthValue = new IntegerValue("ExpandLength", 5, 1, 6);
 
+    // RotationStrafe
+    public final BoolValue rotationStrafeValue = new BoolValue("RotationStrafe", false);
+
     // Rotations
     public final BoolValue clientSideRotationsValue = new BoolValue("SilentRotation", false);
     public final ListValue rotationModeValue = new ListValue("RotationMode", new String[]{"Normal", "Silent", "StaticPitch", "StaticYaw", "Off"}, "Normal");
@@ -104,14 +107,6 @@ public class Scaffold extends Module {
     private final FloatValue staticPitchValue = new FloatValue("StaticPitchOffset", 86F, 70F, 90F);
     private final FloatValue staticYawOffsetValue = new FloatValue("StaticYawOffset", 0F, 0F, 90F);
 
-    // RotationStrafe
-    public final BoolValue rotationStrafeValue = new BoolValue("RotationStrafe", false) {
-        @Override
-        protected void onChanged(final Boolean oldValue, final Boolean newValue) {
-            if (newValue)
-                keepRotationValue.set(true);
-        }
-    };
 
     // Other
     private final FloatValue xzRangeValue = new FloatValue("xzRange", 0.8F, 0.1F, 1.0F);
