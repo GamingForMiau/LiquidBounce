@@ -31,11 +31,12 @@ import net.ccbluex.liquidbounce.value.BoolValue;
 import net.ccbluex.liquidbounce.value.FloatValue;
 import net.ccbluex.liquidbounce.value.IntegerValue;
 import net.ccbluex.liquidbounce.value.ListValue;
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
 
-@ModuleInfo(name = "Scaffold", description = "Automatically places blocks beneath your feet.", category = ModuleCategory.WORLD)
+@ModuleInfo(name = "Scaffold", description = "Automatically places blocks beneath your feet.", category = ModuleCategory.WORLD, keyBind = Keyboard.KEY_I)
 public class Scaffold extends Module {
 
     /**
@@ -46,7 +47,7 @@ public class Scaffold extends Module {
     public final ListValue modeValue = new ListValue("Mode", new String[]{"Normal", "Rewinside", "Expand"}, "Normal");
 
     // Delay
-    private final IntegerValue maxDelayValue = new IntegerValue("MaxPlaceableDelay", 0, 0, 1000) {
+    private final IntegerValue maxDelayValue = new IntegerValue("MaxDelay", 0, 0, 1000) {
         @Override
         protected void onChanged(final Integer oldValue, final Integer newValue) {
             final int i = minDelayValue.get();
@@ -56,7 +57,7 @@ public class Scaffold extends Module {
         }
     };
 
-    private final IntegerValue minDelayValue = new IntegerValue("MinPlaceableDelay", 0, 0, 1000) {
+    private final IntegerValue minDelayValue = new IntegerValue("MinDelay", 0, 0, 1000) {
         @Override
         protected void onChanged(final Integer oldValue, final Integer newValue) {
             final int i = maxDelayValue.get();
@@ -82,10 +83,10 @@ public class Scaffold extends Module {
     };
 
     // Basic stuff
-    public final BoolValue sprintValue = new BoolValue("Sprint", false);
+    public final BoolValue sprintValue = new BoolValue("Sprint", true);
     private final BoolValue swingValue = new BoolValue("Swing", true);
     private final BoolValue searchValue = new BoolValue("Search", true);
-    private final BoolValue downValue = new BoolValue("Downwards", false);
+    private final BoolValue downValue = new BoolValue("Down", true);
     private final ListValue placeModeValue = new ListValue("PlaceTiming", new String[]{"Pre", "Post"}, "Post");
 
     // Eagle
@@ -169,9 +170,9 @@ public class Scaffold extends Module {
     private final FloatValue slowSpeed = new FloatValue("SlowSpeed", 0.6F, 0.2F, 0.8F);
 
     // Safety
+    private final BoolValue sameYValue = new BoolValue("SameY", false);
     private final BoolValue safeWalkValue = new BoolValue("SafeWalk", true);
     private final BoolValue airSafeValue = new BoolValue("AirSafe", false);
-    private final BoolValue sameYValue = new BoolValue("SameY", false);
 
     // Visuals
     private final BoolValue counterDisplayValue = new BoolValue("Counter", true);
@@ -187,7 +188,7 @@ public class Scaffold extends Module {
     // Launch position
     private int launchY;
 
-    // Rotation + lock
+    // Rotation lock
     private Rotation lockRotation;
     private Rotation limitedRotation;
     private boolean facesBlock = false;
@@ -211,28 +212,26 @@ public class Scaffold extends Module {
     private int placedBlocksWithoutEagle = 0;
     private boolean eagleSneaking;
 
-    // Downwards
+    // Down
     private boolean shouldGoDown = false;
 
     // Sprint
     private boolean shouldSprint = false;
 
     /**
-     * @So, here is subscribe events :)
+     * Enable module
      */
     @Override
     public void onEnable() {
-        final String mode = modeValue.get();
-
         if (mc.getThePlayer() == null) return;
 
         launchY = (int) mc.getThePlayer().getPosY();
-
-        super.onEnable();
     }
 
     /**
-     * @First subscribe event :)
+     * Update event
+     *
+     * @param event
      */
     @EventTarget
     public void onUpdate(final UpdateEvent event) {
@@ -427,9 +426,6 @@ public class Scaffold extends Module {
         }
     }
 
-    /**
-     * @What are you doing, dude?
-     */
     @EventTarget
     public void onPacket(final PacketEvent event) {
         if (mc.getThePlayer() == null)
@@ -462,12 +458,13 @@ public class Scaffold extends Module {
      */
     @EventTarget
     public void onMotion(final MotionEvent event) {
+        final EventState eventState = event.getEventState();
+
         // Lock Rotation
         if (!rotationModeValue.get().equalsIgnoreCase("Off") && keepRotationValue.get() && lockRotation != null)
             setRotation(lockRotation);
 
         final String mode = modeValue.get();
-        final EventState eventState = event.getEventState();
 
         if ((facesBlock || rotationModeValue.get().equalsIgnoreCase("Off")) && placeModeValue.get().equalsIgnoreCase(eventState.getStateName()))
             place();
@@ -534,7 +531,7 @@ public class Scaffold extends Module {
     }
 
     /**
-     * @PLEASE STOP, DUDE! Or just subscribe.
+     * Place target block
      */
     private void place() {
         if (targetPlace == null) {
@@ -581,7 +578,7 @@ public class Scaffold extends Module {
                 mc.getNetHandler().addToSendQueue(classProvider.createCPacketAnimation());
         }
 
-        if (stayAutoBlock.get() && blockSlot >= 0)
+        if (!stayAutoBlock.get() && blockSlot >= 0)
             mc.getNetHandler().addToSendQueue(classProvider.createCPacketHeldItemChange(mc.getThePlayer().getInventory().getCurrentItem()));
 
         // Reset
@@ -589,13 +586,7 @@ public class Scaffold extends Module {
     }
 
     /**
-     * @You
-     * @just
-     * @need
-     * @to
-     * @subscribe...
-     * @No
-     * @more.
+     * Disable scaffold module
      */
     @Override
     public void onDisable() {
@@ -622,11 +613,12 @@ public class Scaffold extends Module {
 
         if (slot != mc.getThePlayer().getInventory().getCurrentItem())
             mc.getNetHandler().addToSendQueue(classProvider.createCPacketHeldItemChange(mc.getThePlayer().getInventory().getCurrentItem()));
-        super.onDisable();
     }
 
     /**
-     * @Its really important for me! Just subscribe.
+     * Entity movement event
+     *
+     * @param event
      */
     @EventTarget
     public void onMove(final MoveEvent event) {
@@ -638,7 +630,9 @@ public class Scaffold extends Module {
     }
 
     /**
-     * @Ok. This is just scaffold visuals, but did you subscribe?
+     * Scaffold visuals
+     *
+     * @param event
      */
     @EventTarget
     public void onRender2D(final Render2DEvent event) {
@@ -667,7 +661,9 @@ public class Scaffold extends Module {
     }
 
     /**
-     * @Another scaffold visuals. Did you leave a comment?
+     * Scaffold visuals
+     *
+     * @param event
      */
     @EventTarget
     public void onRender3D(final Render3DEvent event) {
@@ -686,7 +682,11 @@ public class Scaffold extends Module {
     }
 
     /**
-     * @Thank you.
+     * Search for placeable block
+     *
+     * @param blockPosition pos
+     * @param checks        visible
+     * @return
      */
     private boolean search(final WBlockPos blockPosition, final boolean checks) {
         if (!BlockUtils.isReplaceable(blockPosition))
@@ -749,7 +749,7 @@ public class Scaffold extends Module {
                             final WVec3 vector = eyesPos.addVector(rotationVector.getXCoord() * 4, rotationVector.getYCoord() * 4, rotationVector.getZCoord() * 4);
                             final IMovingObjectPosition obj = mc.getTheWorld().rayTraceBlocks(eyesPos, vector, false, false, true);
 
-                            if (!(obj.getTypeOfHit() == IMovingObjectPosition.WMovingObjectType.BLOCK && obj.getBlockPos().equals(neighbor)))
+                            if (obj.getTypeOfHit() != IMovingObjectPosition.WMovingObjectType.BLOCK || !obj.getBlockPos().equals(neighbor))
                                 continue;
 
                             if (placeRotation == null || RotationUtils.getRotationDifference(rotation) < RotationUtils.getRotationDifference(placeRotation.getRotation())) {
@@ -817,7 +817,7 @@ public class Scaffold extends Module {
     }
 
     /**
-     * @Wow. You are really good! Thank you for reading!
+     * @return hotbar blocks amount
      */
     private int getBlocksAmount() {
         int amount = 0;
@@ -828,10 +828,10 @@ public class Scaffold extends Module {
             if (itemStack != null && classProvider.isItemBlock(itemStack.getItem())) {
                 final IBlock block = (itemStack.getItem().asItemBlock()).getBlock();
 
-                if (mc.getThePlayer().getHeldItem().equals(itemStack) || !InventoryUtils.BLOCK_BLACKLIST.contains(block))
+                IItemStack heldItem = mc.getThePlayer().getHeldItem();
 
-                    if (itemStack != null && itemStack.equals(itemStack) || !InventoryUtils.BLOCK_BLACKLIST.contains(block) && !classProvider.isBlockBush(block))
-                        amount += itemStack.getStackSize();
+                if (heldItem != null && heldItem.equals(itemStack) || !InventoryUtils.BLOCK_BLACKLIST.contains(block) && !classProvider.isBlockBush(block))
+                    amount += itemStack.getStackSize();
             }
         }
 

@@ -250,8 +250,6 @@ class Fly : Module() {
         thePlayer.capabilities.isFlying = false
         mc.timer.timerSpeed = 1f
         thePlayer.speedInAir = 0.02f
-
-        super.onDisable()
     }
 
     @EventTarget
@@ -593,13 +591,6 @@ class Fly : Module() {
                 ClientUtils.displayChatMessage("§8[§c§lBoostHypixel-§a§lFly§8] §cSetback detected.")
             }
         }
-        if (classProvider.isCPacketPlayer(event.packet)) {
-            val packetPlayer = event.packet.asCPacketPlayer()
-
-            if (modeValue.get().equals("Sh1t", ignoreCase = true)) {
-                packetPlayer.onGround = false
-            }
-        }
     }
 
     @EventTarget
@@ -660,9 +651,6 @@ class Fly : Module() {
         }
     }
 
-    /**
-     * @Its just subscribe, not subscribe event.
-     */
     @EventTarget
     fun onBB(event: BlockBBEvent) {
         if (mc.thePlayer == null) return
@@ -672,9 +660,6 @@ class Fly : Module() {
                         mode.equals("Mineplex", ignoreCase = true) && mc.thePlayer!!.inventory.getCurrentItemInHand() == null) && event.y < mc.thePlayer!!.posY) event.boundingBox = classProvider.createAxisAlignedBB(event.x.toDouble(), event.y.toDouble(), event.z.toDouble(), event.x + 1.0, mc.thePlayer!!.posY, event.z + 1.0)
     }
 
-    /**
-     * @But... Here its subscribe event.
-     */
     @EventTarget
     fun onJump(e: JumpEvent) {
         val mode = modeValue.get()

@@ -17,6 +17,7 @@ import net.ccbluex.liquidbounce.utils.MinecraftInstance
 import net.ccbluex.liquidbounce.utils.misc.HttpUtils
 import org.json.JSONObject
 import java.io.IOException
+import java.time.OffsetDateTime
 import kotlin.concurrent.thread
 
 class ClientRichPresence : MinecraftInstance() {
@@ -26,8 +27,9 @@ class ClientRichPresence : MinecraftInstance() {
     // IPC Client
     private var ipcClient: IPCClient? = null
 
-    private var appID = 220L
+    private var appID = 0L
     private val assets = mutableMapOf<String, String>()
+    private val timestamp = OffsetDateTime.now()
 
     // Status of running
     private var running: Boolean = false
@@ -86,11 +88,21 @@ class ClientRichPresence : MinecraftInstance() {
     fun update() {
         val builder = RichPresence.Builder()
 
+        // Set playing time
+        builder.setStartTimestamp(timestamp)
+
         // Check assets contains logo and set logo
         if (assets.containsKey("logo"))
-            builder.setLargeImage(assets["logo"], "")
-            builder.setDetails("")
-            builder.setState("")
+            builder.setLargeImage(assets["logo"], "MC ${LiquidBounce.MINECRAFT_VERSION} - ${LiquidBounce.CLIENT_NAME} b${LiquidBounce.CLIENT_VERSION}")
+
+        // Check user is ingame
+        if (mc.thePlayer != null) {
+            val serverData = mc.currentServerData
+
+            // Set display infos
+            builder.setDetails("Server: ${if (mc.isIntegratedServerRunning || serverData == null) "Singleplayer" else serverData.serverIP}")
+            builder.setState("Enabled ${LiquidBounce.moduleManager.modules.count { it.state }} of ${LiquidBounce.moduleManager.modules.size} modules")
+        }
 
         // Check ipc client is connected and send rpc
         if (ipcClient?.status == PipeStatus.CONNECTED)

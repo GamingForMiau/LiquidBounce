@@ -75,6 +75,7 @@ class Criticals : Module() {
                     thePlayer.setPosition(x, y + 0.01, z)
                 }
                 "jump" -> thePlayer.motionY = 0.42
+                "lowjump" -> thePlayer.motionY = 0.3425
                 "visual" -> thePlayer.onCriticalHit(entity)
             }
 

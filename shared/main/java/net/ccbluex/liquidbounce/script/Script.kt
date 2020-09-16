@@ -156,7 +156,7 @@ class Script(val scriptFile: File) : MinecraftInstance() {
      */
     private fun supportLegacyScripts() {
         if (getMagicComment("api_version") != "2") {
-            ClientUtils.getLogger().info("[ScriptAPI] Running script '${scriptFile.name}' with fRat mode enabled.")
+            ClientUtils.getLogger().info("[ScriptAPI] Running script '${scriptFile.name}' with legacy support.")
             val legacyScript = LiquidBounce::class.java.getResource("/assets/minecraft/liquidbounce/scriptapi/legacy.js").readText()
             scriptEngine.eval(legacyScript)
         }

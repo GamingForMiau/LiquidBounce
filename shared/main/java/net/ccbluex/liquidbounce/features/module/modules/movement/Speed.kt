@@ -37,10 +37,8 @@ class Speed : Module() {
             Boost(),
             Frame(),
             MiJump(),
-            OnGround(),
+            OnGround(),  // AAC
             OnGround2(),
-
-            // AAC
             AACBHop(),
             AAC2BHop(),
             AAC3BHop(),
@@ -67,9 +65,7 @@ class Speed : Module() {
             SpectreLowHop(),
             SpectreBHop(),
             SpectreOnGround(),
-
-            // Server
-            TeleportCubeCraft(),
+            TeleportCubeCraft(),  // Server
             HiveHop(),
             HypixelHop(),
             MineplexGround(),

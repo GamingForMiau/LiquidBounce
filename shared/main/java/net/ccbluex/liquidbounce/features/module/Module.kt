@@ -17,8 +17,6 @@ import org.lwjgl.input.Keyboard
 open class Module : MinecraftInstance(), Listenable {
     var isSupported: Boolean
 
-    val thePlayer = mc.thePlayer
-
     // Module information
     // TODO: Remove ModuleInfo and change to constructor (#Kotlin)
     var name: String

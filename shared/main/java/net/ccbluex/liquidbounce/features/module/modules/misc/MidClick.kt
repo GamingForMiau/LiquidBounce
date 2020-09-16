@@ -13,14 +13,13 @@ import net.ccbluex.liquidbounce.features.module.ModuleCategory
 import net.ccbluex.liquidbounce.features.module.ModuleInfo
 import net.ccbluex.liquidbounce.utils.ClientUtils
 import net.ccbluex.liquidbounce.utils.render.ColorUtils.stripColor
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
 import org.lwjgl.input.Mouse
 
 @ModuleInfo(name = "MidClick", description = "Allows you to add a player as a friend by right clicking him.", category = ModuleCategory.MISC)
 class MidClick : Module() {
     private var wasDown = false
 
-    @SubscribeEvent
+    @EventTarget
     fun onRender(event: Render2DEvent?) {
         if (mc.currentScreen != null)
             return
