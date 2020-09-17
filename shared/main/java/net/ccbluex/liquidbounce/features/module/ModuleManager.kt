@@ -71,7 +71,6 @@ class ModuleManager : Listenable {
                 FastBreak::class.java,
                 FastPlace::class.java,
                 ESP::class.java,
-                ESP2::class.java,
                 Speed::class.java,
                 Tracers::class.java,
                 NameTags::class.java,
