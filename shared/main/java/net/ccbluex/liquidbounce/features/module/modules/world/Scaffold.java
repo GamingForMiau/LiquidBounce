@@ -403,9 +403,6 @@ public class Scaffold extends Module {
         }
     }
 
-    /**
-     * @Stop reading the whole code!
-     */
     @EventTarget
     private void onStrafe(StrafeEvent event) {
 
@@ -415,9 +412,6 @@ public class Scaffold extends Module {
         event.cancelEvent();
     }
 
-    /**
-     * @Why are you not stopping?! DUDE, STOP!
-     */
     @EventTarget
     public void onMotion(final MotionEvent event) {
         final EventState eventState = event.getEventState();
