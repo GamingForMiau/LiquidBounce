@@ -91,7 +91,7 @@ public class Scaffold extends Module {
 
     // Rotations
     private final ListValue rotationModeValue = new ListValue("RotationMode", new String[]{"Normal", "Static", "StaticPitch", "StaticYaw", "Off"}, "Normal");
-    private final BoolValue silentRotation = new BoolValue("SilentRotation", false);
+    private final BoolValue silentRotation = new BoolValue("SilentRotation", true);
     private final BoolValue keepRotationValue = new BoolValue("KeepRotation", false);
     private final IntegerValue keepLengthValue = new IntegerValue("KeepRotationLength", 0, 0, 20);
     private final FloatValue staticPitchValue = new FloatValue("StaticPitchOffset", 86F, 70F, 90F);
