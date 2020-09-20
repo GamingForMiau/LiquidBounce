@@ -9,7 +9,6 @@ import net.ccbluex.liquidbounce.LiquidBounce;
 import net.ccbluex.liquidbounce.api.enums.BlockType;
 import net.ccbluex.liquidbounce.api.enums.EnumFacingType;
 import net.ccbluex.liquidbounce.api.minecraft.client.block.IBlock;
-import net.ccbluex.liquidbounce.api.minecraft.inventory.ISlot;
 import net.ccbluex.liquidbounce.api.minecraft.item.IItemStack;
 import net.ccbluex.liquidbounce.api.minecraft.network.IPacket;
 import net.ccbluex.liquidbounce.api.minecraft.network.play.client.ICPacketEntityAction;
@@ -71,16 +70,6 @@ public class Scaffold extends Module {
     // AutoBlock
     private final BoolValue autoBlockValue = new BoolValue("AutoBlock", true);
     private final BoolValue stayAutoBlock = new BoolValue("StayAutoBlock", false);
-
-    // AutoBlockSet
-    public final BoolValue autoBlockSetValue = new BoolValue("AutoBlockSet", false) {
-        @Override
-        protected void onChanged(final Boolean oldValue, final Boolean newValue) {
-            if (newValue)
-                autoBlockValue.set(false);
-            stayAutoBlock.set(false);
-        }
-    };
 
     // Basic stuff
     public final BoolValue sprintValue = new BoolValue("Sprint", true);
@@ -196,10 +185,6 @@ public class Scaffold extends Module {
     // Auto block slot
     private int slot;
 
-    private int blockSlot = -1;
-
-    private ISlot slot1 = null;
-
     // Zitter Smooth
     private boolean zitterDirection;
 
@@ -214,9 +199,6 @@ public class Scaffold extends Module {
 
     // Down
     private boolean shouldGoDown = false;
-
-    // Sprint
-    private boolean shouldSprint = false;
 
     /**
      * Enable module
@@ -235,26 +217,6 @@ public class Scaffold extends Module {
      */
     @EventTarget
     public void onUpdate(final UpdateEvent event) {
-        if (autoBlockSetValue.get()) {
-
-            blockSlot = InventoryUtils.findAutoBlockBlock();
-
-            if (slot1 == null) {
-                slot = mc.getThePlayer().getInventory().getCurrentItem();
-            }
-
-            if (blockSlot != -1) {
-                mc.getThePlayer().getInventory().setCurrentItem(blockSlot - 36);
-            } else {
-                if (slot1 != null) {
-                    mc.getThePlayer().getInventory().setCurrentItem(slot);
-                    slot1 = null;
-                }
-            }
-        }
-
-        final String mode = modeValue.get();
-
         mc.getTimer().setTimerSpeed(timerValue.get());
 
 
@@ -262,28 +224,8 @@ public class Scaffold extends Module {
         if (shouldGoDown)
             mc.getGameSettings().getKeyBindSneak().setPressed(false);
 
-        if (slowValue.get()) {
-            mc.getThePlayer().setMotionX(mc.getThePlayer().getMotionX() * slowSpeed.get());
-            mc.getThePlayer().setMotionZ(mc.getThePlayer().getMotionZ() * slowSpeed.get());
-        }
-
-        shouldSprint = sprintValue.get() && mc.getGameSettings().isKeyDown(mc.getGameSettings().getKeyBindSprint());
-        if (sprintValue.get()) {
-            if (!mc.getGameSettings().isKeyDown(mc.getGameSettings().getKeyBindSprint())) {
-                mc.getGameSettings().getKeyBindSprint().setPressed(false);
-            }
-            if (mc.getGameSettings().isKeyDown(mc.getGameSettings().getKeyBindSprint())) {
-                mc.getGameSettings().getKeyBindSprint().setPressed(true);
-            }
-            if (mc.getGameSettings().getKeyBindSprint().isKeyDown()) {
-                mc.getThePlayer().setSprinting(true);
-            }
-            if (!mc.getGameSettings().getKeyBindSprint().isKeyDown()) {
-                mc.getThePlayer().setSprinting(false);
-            }
-        }
-
         if (mc.getThePlayer().getOnGround()) {
+            final String mode = modeValue.get();
 
             // Rewinside scaffold mode
             if (mode.equalsIgnoreCase("Rewinside")) {
@@ -441,9 +383,6 @@ public class Scaffold extends Module {
         }
     }
 
-    /**
-     * @Stop reading the whole code!
-     */
     @EventTarget
     private void onStrafe(StrafeEvent event) {
 
@@ -453,9 +392,6 @@ public class Scaffold extends Module {
         event.cancelEvent();
     }
 
-    /**
-     * @Why are you not stopping?! DUDE, STOP!
-     */
     @EventTarget
     public void onMotion(final MotionEvent event) {
         final EventState eventState = event.getEventState();
