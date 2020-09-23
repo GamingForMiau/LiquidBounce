@@ -68,7 +68,7 @@ public class Scaffold extends Module {
     private final BoolValue placeableDelay = new BoolValue("PlaceableDelay", false);
 
     // AutoBlock
-    private final ListValue autoBlockValue = new ListValue("AutoBlock", new String[]{"Spoof", "Switch", "Off"}, "Spoof");
+    private final ListValue autoBlockValue = new ListValue("AutoBlock", new String[]{"Off", "Spoof", "Switch"}, "Spoof");
 
     // Basic stuff
     public final BoolValue sprintValue = new BoolValue("Sprint", true);
