@@ -68,7 +68,7 @@ public class Scaffold extends Module {
     private final BoolValue placeableDelay = new BoolValue("PlaceableDelay", false);
 
     // AutoBlock
-    private final ListValue autoBLockValue = new ListValue("AutoBlock", new String[]{"Spoof", "Switch", "Off"}, "Spoof");
+    private final ListValue autoBlockValue = new ListValue("AutoBlock", new String[]{"Spoof", "Switch", "Off"}, "Spoof");
 
     // Basic stuff
     public final BoolValue sprintValue = new BoolValue("Sprint", true);
@@ -434,7 +434,7 @@ public class Scaffold extends Module {
 
     private void update() {
         final boolean isHeldItemBlock = mc.getThePlayer().getHeldItem() != null && classProvider.isItemBlock(mc.getThePlayer().getHeldItem().getItem());
-        if (!autoBLockValue.get().equalsIgnoreCase("Off") ? InventoryUtils.findAutoBlockBlock() == -1 && !isHeldItemBlock : !isHeldItemBlock)
+        if (!autoBlockValue.get().equalsIgnoreCase("Off") ? InventoryUtils.findAutoBlockBlock() == -1 && !isHeldItemBlock : !isHeldItemBlock)
             return;
 
         findBlock(modeValue.get().equalsIgnoreCase("expand"));
@@ -502,7 +502,7 @@ public class Scaffold extends Module {
 
         if (itemStack == null || !classProvider.isItemBlock(itemStack.getItem()) ||
                 classProvider.isBlockBush(itemStack.getItem().asItemBlock().getBlock()) || mc.getThePlayer().getHeldItem().getStackSize() <= 0) {
-            if (autoBLockValue.get().equalsIgnoreCase("Off"))
+            if (autoBlockValue.get().equalsIgnoreCase("Off"))
                 return;
 
             blockSlot = InventoryUtils.findAutoBlockBlock();
@@ -511,7 +511,7 @@ public class Scaffold extends Module {
                 return;
 
             if (blockSlot - 36 != slot)
-                if (autoBLockValue.get().equalsIgnoreCase("Spoof")) {
+                if (autoBlockValue.get().equalsIgnoreCase("Spoof")) {
                     mc.getNetHandler().addToSendQueue(classProvider.createCPacketHeldItemChange(blockSlot - 36));
                 } else {
                     mc.getThePlayer().getInventory().setCurrentItem(blockSlot - 36);
