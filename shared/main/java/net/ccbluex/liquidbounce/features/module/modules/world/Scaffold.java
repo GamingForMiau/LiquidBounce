@@ -68,8 +68,7 @@ public class Scaffold extends Module {
     private final BoolValue placeableDelay = new BoolValue("PlaceableDelay", false);
 
     // AutoBlock
-    private final BoolValue autoBlockValue = new BoolValue("AutoBlock", true);
-    private final BoolValue stayAutoBlock = new BoolValue("StayAutoBlock", false);
+    private final ListValue autoBLockValue = new ListValue("AutoBlock", new String[]{"Spoof", "Switch", "Off"}, "Spoof");
 
     // Basic stuff
     public final BoolValue sprintValue = new BoolValue("Sprint", true);
@@ -435,7 +434,7 @@ public class Scaffold extends Module {
 
     private void update() {
         final boolean isHeldItemBlock = mc.getThePlayer().getHeldItem() != null && classProvider.isItemBlock(mc.getThePlayer().getHeldItem().getItem());
-        if (autoBlockValue.get() ? InventoryUtils.findAutoBlockBlock() == -1 && !isHeldItemBlock : !isHeldItemBlock)
+        if (!autoBLockValue.get().equalsIgnoreCase("Off") ? InventoryUtils.findAutoBlockBlock() == -1 && !isHeldItemBlock : !isHeldItemBlock)
             return;
 
         findBlock(modeValue.get().equalsIgnoreCase("expand"));
@@ -503,7 +502,7 @@ public class Scaffold extends Module {
 
         if (itemStack == null || !classProvider.isItemBlock(itemStack.getItem()) ||
                 classProvider.isBlockBush(itemStack.getItem().asItemBlock().getBlock()) || mc.getThePlayer().getHeldItem().getStackSize() <= 0) {
-            if (!autoBlockValue.get())
+            if (autoBLockValue.get().equalsIgnoreCase("Off"))
                 return;
 
             blockSlot = InventoryUtils.findAutoBlockBlock();
@@ -534,8 +533,10 @@ public class Scaffold extends Module {
                 mc.getNetHandler().addToSendQueue(classProvider.createCPacketAnimation());
         }
 
+        /*
         if (!stayAutoBlock.get() && blockSlot >= 0)
             mc.getNetHandler().addToSendQueue(classProvider.createCPacketHeldItemChange(mc.getThePlayer().getInventory().getCurrentItem()));
+         */
 
         // Reset
         this.targetPlace = null;
