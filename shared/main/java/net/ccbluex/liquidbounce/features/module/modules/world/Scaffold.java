@@ -100,6 +100,8 @@ public class Scaffold extends Module {
     // Other
     private final FloatValue xzRangeValue = new FloatValue("xzRange", 0.8F, 0.1F, 1.0F);
     private final FloatValue yRangeValue = new FloatValue("yRange", 0.8F, 0.1F, 1.0F);
+    private final FloatValue minDiffValue = new FloatValue("MinDiff", 0.0F, 0.0F, 0.2F);
+
 
     // SearchAccuracy
     private final IntegerValue searchAccuracyValue = new IntegerValue("SearchAccuracy", 8, 1, 24) {
@@ -703,6 +705,11 @@ public class Scaffold extends Module {
                             final double diffZ = staticYawMode && i == 1 ? 0 : hitVec.getZCoord() - eyesPos.getZCoord();
 
                             final double diffXZ = Math.sqrt(diffX * diffX + diffZ * diffZ);
+                            if (!side.isUp() && minDiffValue.get() > 0) {
+                                final double diff = Math.abs(side.isNorth() || side.isSouth() ? diffZ : diffX);
+                                if (diff < minDiffValue.get() || diff > 0.3F)
+                                    continue;
+                            }
 
                             final float pitch = staticPitchMode ? staticPitch : WMathHelper.wrapAngleTo180_float((float) -Math.toDegrees(Math.atan2(diffY, diffXZ)));
                             final Rotation rotation = new Rotation(
